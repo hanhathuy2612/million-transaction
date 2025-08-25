@@ -1,0 +1,23 @@
+{
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    // Java formatting settings
+    "java.format.settings.url": "",
+    "java.format.settings.profile": "GoogleStyle",
+    "java.format.onType.enabled": true,
+    "java.format.onSave.enabled": true,
+    // Editor formatting
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnType": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false,
+    // Java specific indentation
+    "java.format.indentation.size": 4,
+    "java.format.indentation.style": "space",
+    // Import organization
+    "java.import.gradle.enabled": true,
+    "java.import.maven.enabled": true,
+}
