@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-payments-table" author="payment-system">
+        <sql>
+            CREATE TABLE payments (
+                id BINARY(16) PRIMARY KEY NOT NULL,
+                merchant_id VARCHAR(255) NOT NULL,
+                amount DECIMAL(19,2) NOT NULL,
+                currency VARCHAR(3) NOT NULL,
+                status VARCHAR(50) NOT NULL,
+                payment_method_id VARCHAR(255),
+                description TEXT,
+                reference_id VARCHAR(255),
+                captured_amount DECIMAL(19,2) NOT NULL DEFAULT 0.00,
+                refunded_amount DECIMAL(19,2) NOT NULL DEFAULT 0.00,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                authorized_at TIMESTAMP,
+                captured_at TIMESTAMP,
+                failed_at TIMESTAMP,
+                failure_reason TEXT
+            );
+
+            ALTER TABLE payments ADD CONSTRAINT chk_positive_amount CHECK (amount > 0);
+            ALTER TABLE payments ADD CONSTRAINT chk_positive_captured_amount CHECK (captured_amount >= 0);
+            ALTER TABLE payments ADD CONSTRAINT chk_positive_refunded_amount CHECK (refunded_amount >= 0);
+            ALTER TABLE payments ADD CONSTRAINT chk_captured_lte_amount CHECK (captured_amount &lt;= amount);
+            ALTER TABLE payments ADD CONSTRAINT chk_refunded_lte_captured CHECK (refunded_amount &lt;= captured_amount);
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
