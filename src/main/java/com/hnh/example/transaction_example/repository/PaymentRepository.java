@@ -1,7 +1,10 @@
 package com.hnh.example.transaction_example.repository;
 
-import com.hnh.example.transaction_example.domain.Payment;
-import com.hnh.example.transaction_example.domain.Payment.PaymentStatus;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,10 +12,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.hnh.example.transaction_example.domain.Payment;
+import com.hnh.example.transaction_example.domain.Payment.PaymentStatus;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
@@ -31,15 +32,13 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     List<Payment> findByMerchantIdAndCreatedAtBetween(
             @Param("merchantId") String merchantId,
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate
-    );
+            @Param("endDate") LocalDateTime endDate);
 
     // Find payments that need timeout processing
     @Query("SELECT p FROM Payment p WHERE p.status = :status AND p.createdAt < :timeoutThreshold")
     List<Payment> findTimeoutCandidates(
             @Param("status") PaymentStatus status,
-            @Param("timeoutThreshold") LocalDateTime timeoutThreshold
-    );
+            @Param("timeoutThreshold") LocalDateTime timeoutThreshold);
 
     // Find payments by status for monitoring
     @Query("SELECT COUNT(p) FROM Payment p WHERE p.status = :status AND p.createdAt >= :since")

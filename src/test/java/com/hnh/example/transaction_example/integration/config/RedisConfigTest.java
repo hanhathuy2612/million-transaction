@@ -1,10 +1,13 @@
 package com.hnh.example.transaction_example.integration.config;
 
-import com.hnh.example.transaction_example.testutils.TestContainerConfig;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
-import org.junit.jupiter.api.Test;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -12,9 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.*;
+import com.hnh.example.transaction_example.testutils.TestContainerConfig;
 
 @SpringBootTest
 @Import(TestContainerConfig.class)
