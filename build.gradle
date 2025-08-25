@@ -67,6 +67,6 @@ dependencies {
 	testImplementation 'net.datafaker:datafaker:2.0.2'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
-}
+// tasks.named('test') {
+// 	useJUnitPlatform()
+// }
