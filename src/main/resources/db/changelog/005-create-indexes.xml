@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="005-create-indexes" author="payment-system">
+        <sql>
+            -- Payments table indexes
+            CREATE INDEX idx_payments_merchant_id ON payments(merchant_id);
+            CREATE INDEX idx_payments_status ON payments(status);
+            CREATE INDEX idx_payments_created_at ON payments(created_at);
+            CREATE INDEX idx_payments_merchant_status ON payments(merchant_id, status);
+            CREATE INDEX idx_payments_merchant_created ON payments(merchant_id, created_at);
+            CREATE INDEX idx_payments_reference_id ON payments(reference_id);
+
+            -- Payment ledger indexes
+            CREATE INDEX idx_payment_ledger_payment_id ON payment_ledger(payment_id);
+            CREATE INDEX idx_payment_ledger_occurred_at ON payment_ledger(occurred_at);
+            CREATE INDEX idx_payment_ledger_entry_type ON payment_ledger(entry_type);
+
+            -- Outbox events indexes
+            CREATE INDEX idx_outbox_events_published ON outbox_events(published);
+            CREATE INDEX idx_outbox_events_created_at ON outbox_events(created_at);
+            CREATE INDEX idx_outbox_events_aggregate_id ON outbox_events(aggregate_id);
+            CREATE INDEX idx_outbox_events_event_type ON outbox_events(event_type);
+            CREATE INDEX idx_outbox_events_published_created ON outbox_events(published, created_at);
+
+            -- Idempotency keys indexes
+            CREATE INDEX idx_idempotency_keys_expires_at ON idempotency_keys(expires_at);
+            CREATE INDEX idx_idempotency_keys_merchant_created ON idempotency_keys(merchant_id, created_at);
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
