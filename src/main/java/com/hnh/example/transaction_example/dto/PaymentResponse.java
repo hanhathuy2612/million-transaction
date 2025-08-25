@@ -1,14 +1,15 @@
 package com.hnh.example.transaction_example.dto;
 
-import com.hnh.example.transaction_example.domain.Payment.PaymentStatus;
-import lombok.Data;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import com.hnh.example.transaction_example.domain.Payment.PaymentStatus;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -43,11 +44,11 @@ public class PaymentResponse {
 
     public boolean isRefundable() {
         return getRefundableAmount().compareTo(BigDecimal.ZERO) > 0 &&
-               (status == PaymentStatus.CAPTURED || status == PaymentStatus.PARTIALLY_REFUNDED);
+                (status == PaymentStatus.CAPTURED || status == PaymentStatus.PARTIALLY_REFUNDED);
     }
 
     public boolean isCapturable() {
         return status == PaymentStatus.AUTHORIZED &&
-               (capturedAmount == null || capturedAmount.compareTo(amount) < 0);
+                (capturedAmount == null || capturedAmount.compareTo(amount) < 0);
     }
 }

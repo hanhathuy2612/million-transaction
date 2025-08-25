@@ -1,18 +1,20 @@
 package com.hnh.example.transaction_example.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hnh.example.transaction_example.domain.Payment;
-import com.hnh.example.transaction_example.dto.PaymentResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hnh.example.transaction_example.domain.Payment;
+import com.hnh.example.transaction_example.dto.PaymentResponse;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -35,11 +37,11 @@ public class PaymentCacheService {
             String key = buildPaymentKey(payment.getId());
             PaymentResponse response = toPaymentResponse(payment);
             String jsonValue = objectMapper.writeValueAsString(response);
-            
+
             redisTemplate.opsForValue().set(key, jsonValue, PAYMENT_CACHE_TTL.toSeconds(), TimeUnit.SECONDS);
-            
+
             log.debug("Cached payment: {}", payment.getId());
-            
+
         } catch (JsonProcessingException e) {
             log.warn("Failed to cache payment: {}", payment.getId(), e);
         }
@@ -52,16 +54,16 @@ public class PaymentCacheService {
         try {
             String key = buildPaymentKey(paymentId);
             String cachedValue = (String) redisTemplate.opsForValue().get(key);
-            
+
             if (cachedValue != null) {
                 PaymentResponse response = objectMapper.readValue(cachedValue, PaymentResponse.class);
                 log.debug("Cache hit for payment: {}", paymentId);
                 return Optional.of(response);
             }
-            
+
             log.debug("Cache miss for payment: {}", paymentId);
             return Optional.empty();
-            
+
         } catch (Exception e) {
             log.warn("Error getting cached payment: {}", paymentId, e);
             return Optional.empty();
@@ -101,12 +103,12 @@ public class PaymentCacheService {
         try {
             String key = buildMerchantPaymentsKey(merchantId);
             String cachedValue = (String) redisTemplate.opsForValue().get(key);
-            
+
             if (cachedValue != null) {
                 log.debug("Cache hit for merchant payments: {}", merchantId);
                 return Optional.of(cachedValue);
             }
-            
+
             return Optional.empty();
         } catch (Exception e) {
             log.warn("Error getting cached merchant payment summary: {}", merchantId, e);
@@ -133,7 +135,7 @@ public class PaymentCacheService {
     public void warmUpCache(Payment payment) {
         // Cache immediately after creation/update
         cachePayment(payment);
-        
+
         // Invalidate related caches
         invalidateMerchantPaymentCache(payment.getMerchantId());
     }
@@ -144,7 +146,7 @@ public class PaymentCacheService {
     public void cachePaymentStatus(UUID paymentId, Payment.PaymentStatus status) {
         try {
             String key = buildPaymentStatusKey(paymentId);
-            redisTemplate.opsForValue().set(key, status.toString(), 
+            redisTemplate.opsForValue().set(key, status.toString(),
                     PAYMENT_CACHE_TTL.toSeconds(), TimeUnit.SECONDS);
         } catch (Exception e) {
             log.warn("Error caching payment status: {}", paymentId, e);
@@ -158,11 +160,11 @@ public class PaymentCacheService {
         try {
             String key = buildPaymentStatusKey(paymentId);
             String status = (String) redisTemplate.opsForValue().get(key);
-            
+
             if (status != null) {
                 return Optional.of(Payment.PaymentStatus.valueOf(status));
             }
-            
+
             return Optional.empty();
         } catch (Exception e) {
             log.warn("Error getting cached payment status: {}", paymentId, e);
@@ -173,8 +175,8 @@ public class PaymentCacheService {
     /**
      * Implement cache-aside pattern with stampede protection
      */
-    public Optional<PaymentResponse> getOrCachePayment(UUID paymentId, 
-                                                      java.util.function.Supplier<Payment> dataLoader) {
+    public Optional<PaymentResponse> getOrCachePayment(UUID paymentId,
+            java.util.function.Supplier<Payment> dataLoader) {
         // Try cache first
         Optional<PaymentResponse> cached = getCachedPayment(paymentId);
         if (cached.isPresent()) {

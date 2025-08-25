@@ -1,16 +1,18 @@
 package com.hnh.example.transaction_example.service;
 
-import com.hnh.example.transaction_example.domain.OutboxEvent;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
+import com.hnh.example.transaction_example.domain.OutboxEvent;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +33,7 @@ public class OutboxRelayService {
     public void relayEvents() {
         try {
             List<OutboxEvent> events = outboxService.getUnpublishedEvents(BATCH_SIZE);
-            
+
             if (events.isEmpty()) {
                 return;
             }
@@ -45,15 +47,14 @@ public class OutboxRelayService {
 
             // Wait for all publishes to complete
             CompletableFuture<Void> allOf = CompletableFuture.allOf(
-                    futures.toArray(new CompletableFuture[0])
-            );
+                    futures.toArray(new CompletableFuture[0]));
 
             allOf.thenRun(() -> {
                 // Mark events as published only after successful Kafka publish
                 List<Long> eventIds = events.stream()
                         .map(OutboxEvent::getId)
                         .collect(Collectors.toList());
-                        
+
                 outboxService.markEventsAsPublished(eventIds);
                 log.info("Successfully relayed {} events to Kafka", events.size());
             }).exceptionally(throwable -> {
@@ -72,10 +73,10 @@ public class OutboxRelayService {
     private CompletableFuture<SendResult<String, String>> publishToKafka(OutboxEvent event) {
         // Use payment ID as partition key for ordering
         String partitionKey = event.getAggregateId().toString();
-        
+
         return kafkaTemplate.send(TOPIC_NAME, partitionKey, event.getPayload())
                 .thenApply(result -> {
-                    log.debug("Published event {} to Kafka partition {}", 
+                    log.debug("Published event {} to Kafka partition {}",
                             event.getId(), result.getRecordMetadata().partition());
                     return result;
                 })

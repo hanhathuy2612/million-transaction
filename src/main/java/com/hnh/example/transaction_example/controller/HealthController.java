@@ -1,9 +1,10 @@
 package com.hnh.example.transaction_example.controller;
 
-import com.hnh.example.transaction_example.service.AnalyticsService;
-import com.hnh.example.transaction_example.service.OutboxRelayService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.sql.DataSource;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
@@ -12,10 +13,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.sql.DataSource;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import com.hnh.example.transaction_example.service.AnalyticsService;
+import com.hnh.example.transaction_example.service.OutboxRelayService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/v1/health")
@@ -70,7 +72,7 @@ public class HealthController {
             Long outboxLag = outboxRelayService.getOutboxLag();
             String status = outboxLag < 100 ? "UP" : "DEGRADED";
             health.put("outbox", Map.of("status", status, "unpublishedEvents", outboxLag));
-            
+
             if (outboxLag > 1000) {
                 allHealthy = false;
             }
@@ -93,21 +95,20 @@ public class HealthController {
     @GetMapping("/metrics")
     public ResponseEntity<Map<String, Object>> paymentMetrics() {
         Map<String, Object> metrics = new HashMap<>();
-        
+
         try {
             // Get sample metrics (in production, this would come from your metrics system)
             var sampleMetrics = analyticsService.getPaymentMetrics(
-                    "sample_merchant", 
-                    LocalDateTime.now().minusHours(1), 
-                    LocalDateTime.now()
-            );
-            
+                    "sample_merchant",
+                    LocalDateTime.now().minusHours(1),
+                    LocalDateTime.now());
+
             metrics.put("lastHourMetrics", sampleMetrics);
             metrics.put("outboxLag", outboxRelayService.getOutboxLag());
             metrics.put("timestamp", LocalDateTime.now());
-            
+
             return ResponseEntity.ok(metrics);
-            
+
         } catch (Exception e) {
             log.error("Error getting payment metrics", e);
             return ResponseEntity.internalServerError()
@@ -124,16 +125,14 @@ public class HealthController {
             // Quick checks for critical dependencies
             dataSource.getConnection().close();
             redisTemplate.opsForValue().get("test");
-            
+
             return ResponseEntity.ok(Map.of(
                     "status", "ready",
-                    "timestamp", LocalDateTime.now().toString()
-            ));
+                    "timestamp", LocalDateTime.now().toString()));
         } catch (Exception e) {
             return ResponseEntity.status(503).body(Map.of(
                     "status", "not ready",
-                    "error", e.getMessage()
-            ));
+                    "error", e.getMessage()));
         }
     }
 
@@ -144,7 +143,6 @@ public class HealthController {
     public ResponseEntity<Map<String, String>> liveness() {
         return ResponseEntity.ok(Map.of(
                 "status", "alive",
-                "timestamp", LocalDateTime.now().toString()
-        ));
+                "timestamp", LocalDateTime.now().toString()));
     }
 }

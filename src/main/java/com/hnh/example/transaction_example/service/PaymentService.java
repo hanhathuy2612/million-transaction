@@ -1,12 +1,9 @@
 package com.hnh.example.transaction_example.service;
 
-import com.hnh.example.transaction_example.domain.Payment;
-import com.hnh.example.transaction_example.domain.PaymentLedger;
-import com.hnh.example.transaction_example.dto.*;
-import com.hnh.example.transaction_example.repository.PaymentRepository;
-import com.hnh.example.transaction_example.repository.PaymentLedgerRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -14,9 +11,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import com.hnh.example.transaction_example.domain.Payment;
+import com.hnh.example.transaction_example.domain.PaymentLedger;
+import com.hnh.example.transaction_example.dto.CaptureRequest;
+import com.hnh.example.transaction_example.dto.PaymentRequest;
+import com.hnh.example.transaction_example.dto.PaymentResponse;
+import com.hnh.example.transaction_example.dto.RefundRequest;
+import com.hnh.example.transaction_example.repository.PaymentLedgerRepository;
+import com.hnh.example.transaction_example.repository.PaymentRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -31,8 +36,8 @@ public class PaymentService {
     /**
      * Create a new payment with idempotency support
      */
-    public ResponseEntity<PaymentResponse> createPayment(String merchantId, String idempotencyKey, 
-                                                        PaymentRequest request) {
+    public ResponseEntity<PaymentResponse> createPayment(String merchantId, String idempotencyKey,
+            PaymentRequest request) {
         // Check for idempotent request
         var cachedResponse = idempotencyService.checkIdempotency(merchantId, idempotencyKey, request);
         if (cachedResponse.isPresent()) {
@@ -77,7 +82,8 @@ public class PaymentService {
             // Save payment
             payment = paymentRepository.save(payment);
 
-            // Simulate payment authorization (in real system, this would call payment processor)
+            // Simulate payment authorization (in real system, this would call payment
+            // processor)
             boolean authorizationSuccess = simulatePaymentAuthorization(payment);
 
             if (authorizationSuccess) {
@@ -86,7 +92,8 @@ public class PaymentService {
                 payment = paymentRepository.save(payment);
 
                 // Create ledger entry
-                PaymentLedger ledgerEntry = PaymentLedger.createAuthorizationEntry(payment.getId(), payment.getAmount());
+                PaymentLedger ledgerEntry = PaymentLedger.createAuthorizationEntry(payment.getId(),
+                        payment.getAmount());
                 paymentLedgerRepository.save(ledgerEntry);
 
                 // Publish event via outbox pattern
@@ -117,7 +124,8 @@ public class PaymentService {
      * Capture an authorized payment
      */
     @Transactional
-    public ResponseEntity<PaymentResponse> capturePayment(UUID paymentId, String idempotencyKey, CaptureRequest request) {
+    public ResponseEntity<PaymentResponse> capturePayment(UUID paymentId, String idempotencyKey,
+            CaptureRequest request) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
@@ -139,25 +147,25 @@ public class PaymentService {
 
         BigDecimal captureAmount = request.getAmount();
         BigDecimal remainingAmount = payment.getAmount().subtract(payment.getCapturedAmount());
-        
+
         if (captureAmount.compareTo(remainingAmount) > 0) {
             throw new IllegalArgumentException("Capture amount exceeds remaining authorized amount");
         }
 
         // Update payment
         payment.setCapturedAmount(payment.getCapturedAmount().add(captureAmount));
-        
+
         if (payment.getCapturedAmount().compareTo(payment.getAmount()) == 0) {
             payment.setStatus(Payment.PaymentStatus.CAPTURED);
         }
-        
+
         payment.setCapturedAt(LocalDateTime.now());
         payment = paymentRepository.save(payment);
 
         // Create ledger entry
         PaymentLedger currentBalance = paymentLedgerRepository.findTopByPaymentIdOrderByOccurredAtDesc(paymentId)
                 .orElse(PaymentLedger.builder().balanceAfter(BigDecimal.ZERO).build());
-        
+
         PaymentLedger ledgerEntry = PaymentLedger.createCaptureEntry(
                 paymentId, captureAmount, currentBalance.getBalanceAfter());
         paymentLedgerRepository.save(ledgerEntry);
@@ -171,7 +179,8 @@ public class PaymentService {
         if (idempotencyKey != null && !idempotencyKey.trim().isEmpty()) {
             @SuppressWarnings("unchecked")
             ResponseEntity<Object> objectResponse = (ResponseEntity<Object>) (ResponseEntity<?>) response;
-            idempotencyService.storeIdempotentResponse(payment.getMerchantId(), idempotencyKey, request, objectResponse);
+            idempotencyService.storeIdempotentResponse(payment.getMerchantId(), idempotencyKey, request,
+                    objectResponse);
         }
 
         log.info("Payment {} captured amount: {}", paymentId, captureAmount);
@@ -204,26 +213,26 @@ public class PaymentService {
 
         BigDecimal refundAmount = request.getAmount();
         BigDecimal refundableAmount = payment.getRefundableAmount();
-        
+
         if (refundAmount.compareTo(refundableAmount) > 0) {
             throw new IllegalArgumentException("Refund amount exceeds refundable amount");
         }
 
         // Update payment
         payment.setRefundedAmount(payment.getRefundedAmount().add(refundAmount));
-        
+
         if (payment.getRefundedAmount().compareTo(payment.getCapturedAmount()) == 0) {
             payment.setStatus(Payment.PaymentStatus.REFUNDED);
         } else {
             payment.setStatus(Payment.PaymentStatus.PARTIALLY_REFUNDED);
         }
-        
+
         payment = paymentRepository.save(payment);
 
         // Create ledger entry
         PaymentLedger currentBalance = paymentLedgerRepository.findTopByPaymentIdOrderByOccurredAtDesc(paymentId)
                 .orElse(PaymentLedger.builder().balanceAfter(BigDecimal.ZERO).build());
-        
+
         PaymentLedger ledgerEntry = PaymentLedger.createRefundEntry(
                 paymentId, refundAmount, currentBalance.getBalanceAfter());
         paymentLedgerRepository.save(ledgerEntry);
@@ -237,7 +246,8 @@ public class PaymentService {
         if (idempotencyKey != null && !idempotencyKey.trim().isEmpty()) {
             @SuppressWarnings("unchecked")
             ResponseEntity<Object> objectResponse = (ResponseEntity<Object>) (ResponseEntity<?>) response;
-            idempotencyService.storeIdempotentResponse(payment.getMerchantId(), idempotencyKey, request, objectResponse);
+            idempotencyService.storeIdempotentResponse(payment.getMerchantId(), idempotencyKey, request,
+                    objectResponse);
         }
 
         log.info("Payment {} refunded amount: {}", paymentId, refundAmount);
@@ -251,7 +261,7 @@ public class PaymentService {
     public ResponseEntity<PaymentResponse> getPayment(UUID paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
-        
+
         return ResponseEntity.ok(toPaymentResponse(payment));
     }
 
@@ -268,7 +278,7 @@ public class PaymentService {
         if (!request.isSupportedCurrency()) {
             throw new IllegalArgumentException("Unsupported currency: " + request.getCurrency());
         }
-        
+
         if (!request.hasValidPrecision()) {
             throw new IllegalArgumentException("Invalid amount precision for currency: " + request.getCurrency());
         }

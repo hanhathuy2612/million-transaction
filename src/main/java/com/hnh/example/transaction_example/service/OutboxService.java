@@ -1,20 +1,21 @@
 package com.hnh.example.transaction_example.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hnh.example.transaction_example.domain.OutboxEvent;
-import com.hnh.example.transaction_example.domain.Payment;
-import com.hnh.example.transaction_example.repository.OutboxEventRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+
+import com.hnh.example.transaction_example.util.JsonUtil;
+import com.hnh.example.transaction_example.domain.OutboxEvent;
+import com.hnh.example.transaction_example.domain.Payment;
+import com.hnh.example.transaction_example.repository.OutboxEventRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +23,6 @@ import java.util.UUID;
 public class OutboxService {
 
     private final OutboxEventRepository outboxEventRepository;
-    private final ObjectMapper objectMapper;
 
     /**
      * Create outbox event for payment authorization
@@ -43,7 +43,7 @@ public class OutboxService {
     public void publishPaymentCaptured(Payment payment, java.math.BigDecimal capturedAmount) {
         Map<String, Object> payload = createPaymentEventPayload(payment, "captured");
         payload.put("capturedAmount", capturedAmount);
-        
+
         OutboxEvent event = OutboxEvent.paymentCaptured(payment.getId(), serializePayload(payload));
         outboxEventRepository.save(event);
         log.debug("Created outbox event for payment.captured: {}", payment.getId());
@@ -57,7 +57,7 @@ public class OutboxService {
         Map<String, Object> payload = createPaymentEventPayload(payment, "refunded");
         payload.put("refundedAmount", refundedAmount);
         payload.put("totalRefundedAmount", payment.getRefundedAmount());
-        
+
         OutboxEvent event = OutboxEvent.paymentRefunded(payment.getId(), serializePayload(payload));
         outboxEventRepository.save(event);
         log.debug("Created outbox event for payment.refunded: {}", payment.getId());
@@ -70,7 +70,7 @@ public class OutboxService {
     public void publishPaymentFailed(Payment payment, String failureReason) {
         Map<String, Object> payload = createPaymentEventPayload(payment, "failed");
         payload.put("failureReason", failureReason);
-        
+
         OutboxEvent event = OutboxEvent.paymentFailed(payment.getId(), serializePayload(payload));
         outboxEventRepository.save(event);
         log.debug("Created outbox event for payment.failed: {}", payment.getId());
@@ -120,14 +120,13 @@ public class OutboxService {
                 "eventType", eventType,
                 "timestamp", LocalDateTime.now().toString(),
                 "referenceId", payment.getReferenceId() != null ? payment.getReferenceId() : "",
-                "paymentMethodId", payment.getPaymentMethodId()
-        );
+                "paymentMethodId", payment.getPaymentMethodId());
     }
 
     private String serializePayload(Map<String, Object> payload) {
         try {
-            return objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
+            return JsonUtil.toJson(payload);
+        } catch (Exception e) {
             log.error("Error serializing event payload", e);
             throw new RuntimeException("Failed to serialize event payload", e);
         }

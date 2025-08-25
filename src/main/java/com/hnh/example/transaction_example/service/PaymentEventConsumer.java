@@ -1,15 +1,17 @@
 package com.hnh.example.transaction_example.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -23,11 +25,7 @@ public class PaymentEventConsumer {
     /**
      * Consumer for payment events to trigger webhooks and analytics
      */
-    @KafkaListener(
-        topics = "payments.events.v1",
-        groupId = "webhook-processor",
-        containerFactory = "kafkaListenerContainerFactory"
-    )
+    @KafkaListener(topics = "payments.events.v1", groupId = "webhook-processor", containerFactory = "kafkaListenerContainerFactory")
     public void handlePaymentEvent(
             @Payload String eventPayload,
             @Header(KafkaHeaders.RECEIVED_KEY) String paymentId,
@@ -35,29 +33,29 @@ public class PaymentEventConsumer {
             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
             @Header(KafkaHeaders.OFFSET) long offset,
             Acknowledgment acknowledgment) {
-        
+
         try {
             log.debug("Processing payment event: {} from partition: {} offset: {}", paymentId, partition, offset);
-            
+
             JsonNode eventData = objectMapper.readTree(eventPayload);
             String eventType = eventData.get("eventType").asText();
             String merchantId = eventData.get("merchantId").asText();
-            
+
             // Process webhooks asynchronously
             webhookService.sendWebhookAsync(merchantId, eventType, eventData);
-            
+
             // Update analytics
             analyticsService.recordPaymentEvent(eventType, eventData);
-            
+
             // Manual acknowledgment after successful processing
             acknowledgment.acknowledge();
-            
+
             log.debug("Successfully processed payment event: {} type: {}", paymentId, eventType);
-            
+
         } catch (Exception e) {
-            log.error("Error processing payment event: {} from partition: {} offset: {}", 
+            log.error("Error processing payment event: {} from partition: {} offset: {}",
                     paymentId, partition, offset, e);
-            
+
             // Don't acknowledge - let the error handler deal with retries
             // In production, you might want to send to DLT after max retries
         }
@@ -66,20 +64,16 @@ public class PaymentEventConsumer {
     /**
      * Consumer for payment events to update read models
      */
-    @KafkaListener(
-        topics = "payments.events.v1",
-        groupId = "read-model-projector",
-        containerFactory = "kafkaListenerContainerFactory"
-    )
+    @KafkaListener(topics = "payments.events.v1", groupId = "read-model-projector", containerFactory = "kafkaListenerContainerFactory")
     public void projectToReadModel(
             @Payload String eventPayload,
             @Header(KafkaHeaders.RECEIVED_KEY) String paymentId,
             Acknowledgment acknowledgment) {
-        
+
         try {
             JsonNode eventData = objectMapper.readTree(eventPayload);
             String eventType = eventData.get("eventType").asText();
-            
+
             // Update search indexes, dashboards, etc.
             switch (eventType) {
                 case "authorized":
@@ -97,9 +91,9 @@ public class PaymentEventConsumer {
                 default:
                     log.warn("Unknown event type: {}", eventType);
             }
-            
+
             acknowledgment.acknowledge();
-            
+
         } catch (Exception e) {
             log.error("Error projecting to read model for payment: {}", paymentId, e);
         }

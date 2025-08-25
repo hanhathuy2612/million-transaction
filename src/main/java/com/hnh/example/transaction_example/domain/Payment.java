@@ -1,16 +1,24 @@
 package com.hnh.example.transaction_example.domain;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "payments")
@@ -86,13 +94,13 @@ public class Payment {
 
     // Business logic methods
     public boolean canCapture() {
-        return status == PaymentStatus.AUTHORIZED && 
-               capturedAmount.compareTo(amount) < 0;
+        return status == PaymentStatus.AUTHORIZED &&
+                capturedAmount.compareTo(amount) < 0;
     }
 
     public boolean canRefund() {
         return (status == PaymentStatus.CAPTURED || status == PaymentStatus.PARTIALLY_REFUNDED) &&
-               refundedAmount.compareTo(capturedAmount) < 0;
+                refundedAmount.compareTo(capturedAmount) < 0;
     }
 
     public BigDecimal getRefundableAmount() {

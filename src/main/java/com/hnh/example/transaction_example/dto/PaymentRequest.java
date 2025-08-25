@@ -1,12 +1,17 @@
 package com.hnh.example.transaction_example.dto;
 
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
 import java.math.BigDecimal;
+
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -38,20 +43,21 @@ public class PaymentRequest {
 
     // Validation for supported currencies
     public boolean isSupportedCurrency() {
-        return currency != null && 
-               (currency.equals("USD") || currency.equals("EUR") || 
-                currency.equals("GBP") || currency.equals("JPY"));
+        return currency != null &&
+                (currency.equals("USD") || currency.equals("EUR") ||
+                        currency.equals("GBP") || currency.equals("JPY"));
     }
 
     // Validation for amount precision based on currency
     public boolean hasValidPrecision() {
-        if (currency == null || amount == null) return false;
-        
+        if (currency == null || amount == null)
+            return false;
+
         // JPY doesn't support decimal places
         if (currency.equals("JPY")) {
             return amount.scale() == 0;
         }
-        
+
         // Other currencies support 2 decimal places
         return amount.scale() <= 2;
     }

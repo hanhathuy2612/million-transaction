@@ -1,18 +1,54 @@
 package com.hnh.example.transaction_example.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.hnh.example.transaction_example.domain.Payment;
+import com.hnh.example.transaction_example.repository.PaymentRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AnalyticsService {
+
+    private final PaymentRepository paymentRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    // Constants
+    private static final String EVENT_TYPE_AUTHORIZED = "authorized";
+    private static final String EVENT_TYPE_CAPTURED = "captured";
+    private static final String EVENT_TYPE_REFUNDED = "refunded";
+    private static final String EVENT_TYPE_FAILED = "failed";
+
+    private static final String CACHE_KEY_PREFIX = "analytics:";
+    private static final long CACHE_TTL_MINUTES = 15;
+
+    private static final String METRIC_LOG_FORMAT = "METRIC: payment.{} merchant={} currency={} amount={} timestamp={}";
+
+    // Mock data constants for getPaymentMetrics
+    private static final long MOCK_TOTAL_AUTHORIZATIONS = 150L;
+    private static final long MOCK_TOTAL_CAPTURES = 145L;
+    private static final long MOCK_TOTAL_REFUNDS = 5L;
+    private static final long MOCK_TOTAL_FAILURES = 10L;
+    private static final String MOCK_AUTHORIZED_AMOUNT = "15000.00";
+    private static final String MOCK_CAPTURED_AMOUNT = "14750.00";
+    private static final String MOCK_REFUNDED_AMOUNT = "250.00";
+    private static final double MOCK_CONVERSION_RATE = 96.67;
+    private static final double MOCK_REFUND_RATE = 3.45;
+    private static final double MOCK_FAILURE_RATE = 6.25;
 
     /**
      * Record payment event for analytics and monitoring
@@ -23,70 +59,67 @@ public class AnalyticsService {
             String merchantId = eventData.get("merchantId").asText();
             String currency = eventData.get("currency").asText();
             BigDecimal amount = new BigDecimal(eventData.get("amount").asText());
-            
+
             // Record metrics based on event type
             switch (eventType) {
-                case "authorized":
+                case EVENT_TYPE_AUTHORIZED:
                     recordPaymentAuthorized(merchantId, currency, amount);
                     break;
-                case "captured":
-                    BigDecimal capturedAmount = eventData.has("capturedAmount") 
+                case EVENT_TYPE_CAPTURED:
+                    BigDecimal capturedAmount = eventData.has("capturedAmount")
                             ? new BigDecimal(eventData.get("capturedAmount").asText())
                             : amount;
                     recordPaymentCaptured(merchantId, currency, capturedAmount);
                     break;
-                case "refunded":
+                case EVENT_TYPE_REFUNDED:
                     BigDecimal refundedAmount = new BigDecimal(eventData.get("refundedAmount").asText());
                     recordPaymentRefunded(merchantId, currency, refundedAmount);
                     break;
-                case "failed":
+                case EVENT_TYPE_FAILED:
                     recordPaymentFailed(merchantId, currency, amount);
                     break;
                 default:
                     log.warn("Unknown event type for analytics: {}", eventType);
             }
-            
+
             log.debug("Recorded analytics for payment: {} event: {}", paymentId, eventType);
-            
+
         } catch (Exception e) {
             log.error("Error recording analytics for event: {}", eventType, e);
         }
     }
 
-    private void recordPaymentAuthorized(String merchantId, String currency, BigDecimal amount) {
-        // In production, this would send metrics to your monitoring system
-        // Examples: Prometheus, DataDog, CloudWatch, etc.
-        
-        log.info("METRIC: payment.authorized merchant={} currency={} amount={} timestamp={}", 
-                merchantId, currency, amount, getCurrentTimestamp());
-        
-        // Example metric recording (pseudo-code):
-        // meterRegistry.counter("payments.authorized.count", 
-        //     Tags.of("merchant", merchantId, "currency", currency)).increment();
-        // meterRegistry.gauge("payments.authorized.amount", 
-        //     Tags.of("merchant", merchantId, "currency", currency), amount.doubleValue());
-    }
+    /**
+     * Get payment analytics for a merchant
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getPaymentAnalytics(String merchantId, LocalDateTime fromDate, LocalDateTime toDate) {
+        String cacheKey = CACHE_KEY_PREFIX + merchantId + ":" + fromDate + ":" + toDate;
 
-    private void recordPaymentCaptured(String merchantId, String currency, BigDecimal amount) {
-        log.info("METRIC: payment.captured merchant={} currency={} amount={} timestamp={}", 
-                merchantId, currency, amount, getCurrentTimestamp());
-        
-        // Record revenue metrics
-        // This is actual money collected
-    }
+        try {
+            // Check cache first
+            Object cached = redisTemplate.opsForValue().get(cacheKey);
+            if (cached != null) {
+                return (Map<String, Object>) cached;
+            }
+        } catch (Exception e) {
+            log.warn("Error reading from cache: {}", e.getMessage());
+        }
 
-    private void recordPaymentRefunded(String merchantId, String currency, BigDecimal amount) {
-        log.info("METRIC: payment.refunded merchant={} currency={} amount={} timestamp={}", 
-                merchantId, currency, amount, getCurrentTimestamp());
-        
-        // Track refund rates and amounts
-    }
+        // Get payments from database
+        List<Payment> payments = paymentRepository.findByMerchantIdAndCreatedAtBetween(merchantId, fromDate, toDate);
 
-    private void recordPaymentFailed(String merchantId, String currency, BigDecimal amount) {
-        log.info("METRIC: payment.failed merchant={} currency={} amount={} timestamp={}", 
-                merchantId, currency, amount, getCurrentTimestamp());
-        
-        // Track failure rates for monitoring and alerting
+        // Calculate analytics
+        Map<String, Object> analytics = calculateAnalytics(payments);
+
+        try {
+            // Cache the results
+            redisTemplate.opsForValue().set(cacheKey, analytics, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            log.warn("Error writing to cache: {}", e.getMessage());
+        }
+
+        return analytics;
     }
 
     /**
@@ -95,22 +128,95 @@ public class AnalyticsService {
     public PaymentMetrics getPaymentMetrics(String merchantId, LocalDateTime from, LocalDateTime to) {
         // In production, this would query your analytics database
         // For now, return mock data
-        
+
         return PaymentMetrics.builder()
                 .merchantId(merchantId)
                 .periodStart(from)
                 .periodEnd(to)
-                .totalAuthorizations(150L)
-                .totalCaptures(145L)
-                .totalRefunds(5L)
-                .totalFailures(10L)
-                .totalAuthorizedAmount(new BigDecimal("15000.00"))
-                .totalCapturedAmount(new BigDecimal("14750.00"))
-                .totalRefundedAmount(new BigDecimal("250.00"))
-                .conversionRate(96.67) // (captures / authorizations) * 100
-                .refundRate(3.45) // (refunds / captures) * 100
-                .failureRate(6.25) // (failures / attempts) * 100
+                .totalAuthorizations(MOCK_TOTAL_AUTHORIZATIONS)
+                .totalCaptures(MOCK_TOTAL_CAPTURES)
+                .totalRefunds(MOCK_TOTAL_REFUNDS)
+                .totalFailures(MOCK_TOTAL_FAILURES)
+                .totalAuthorizedAmount(new BigDecimal(MOCK_AUTHORIZED_AMOUNT))
+                .totalCapturedAmount(new BigDecimal(MOCK_CAPTURED_AMOUNT))
+                .totalRefundedAmount(new BigDecimal(MOCK_REFUNDED_AMOUNT))
+                .conversionRate(MOCK_CONVERSION_RATE) // (captures / authorizations) * 100
+                .refundRate(MOCK_REFUND_RATE) // (refunds / captures) * 100
+                .failureRate(MOCK_FAILURE_RATE) // (failures / attempts) * 100
                 .build();
+    }
+
+    // Private helper methods
+
+    private Map<String, Object> calculateAnalytics(List<Payment> payments) {
+        BigDecimal totalVolume = BigDecimal.ZERO;
+        BigDecimal capturedVolume = BigDecimal.ZERO;
+        long totalCount = payments.size();
+        long capturedCount = 0;
+        long failedCount = 0;
+
+        Map<String, Long> statusBreakdown = payments.stream()
+                .collect(Collectors.groupingBy(
+                        p -> p.getStatus().toString(),
+                        Collectors.counting()));
+
+        for (Payment payment : payments) {
+            totalVolume = totalVolume.add(payment.getAmount());
+
+            if (payment.getStatus() == Payment.PaymentStatus.CAPTURED) {
+                capturedVolume = capturedVolume.add(payment.getCapturedAmount());
+                capturedCount++;
+            } else if (payment.getStatus() == Payment.PaymentStatus.FAILED) {
+                failedCount++;
+            }
+        }
+
+        double successRate = totalCount > 0 ? (capturedCount * 100.0) / totalCount : 0.0;
+        BigDecimal averageTransactionAmount = totalCount > 0
+                ? totalVolume.divide(BigDecimal.valueOf(totalCount), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        return Map.of(
+                "totalVolume", totalVolume,
+                "capturedVolume", capturedVolume,
+                "totalCount", totalCount,
+                "capturedCount", capturedCount,
+                "failedCount", failedCount,
+                "successRate", successRate,
+                "statusBreakdown", statusBreakdown,
+                "averageTransactionAmount", averageTransactionAmount);
+    }
+
+    private void recordPaymentAuthorized(String merchantId, String currency, BigDecimal amount) {
+        // In production, this would send metrics to your monitoring system
+        // Examples: Prometheus, DataDog, CloudWatch, etc.
+
+        log.info(METRIC_LOG_FORMAT, EVENT_TYPE_AUTHORIZED, merchantId, currency, amount, getCurrentTimestamp());
+
+        // Example metric recording (pseudo-code):
+        // meterRegistry.counter("payments.authorized.count",
+        // Tags.of("merchant", merchantId, "currency", currency)).increment();
+        // meterRegistry.gauge("payments.authorized.amount",
+        // Tags.of("merchant", merchantId, "currency", currency), amount.doubleValue());
+    }
+
+    private void recordPaymentCaptured(String merchantId, String currency, BigDecimal amount) {
+        log.info(METRIC_LOG_FORMAT, EVENT_TYPE_CAPTURED, merchantId, currency, amount, getCurrentTimestamp());
+
+        // Record revenue metrics
+        // This is actual money collected
+    }
+
+    private void recordPaymentRefunded(String merchantId, String currency, BigDecimal amount) {
+        log.info(METRIC_LOG_FORMAT, EVENT_TYPE_REFUNDED, merchantId, currency, amount, getCurrentTimestamp());
+
+        // Track refund rates and amounts
+    }
+
+    private void recordPaymentFailed(String merchantId, String currency, BigDecimal amount) {
+        log.info(METRIC_LOG_FORMAT, EVENT_TYPE_FAILED, merchantId, currency, amount, getCurrentTimestamp());
+
+        // Track failure rates for monitoring and alerting
     }
 
     private String getCurrentTimestamp() {

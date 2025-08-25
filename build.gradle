@@ -41,6 +41,9 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	
+	// Validation
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	
 	// MapStruct
 	implementation 'org.mapstruct:mapstruct:1.6.1'
 	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.1'
@@ -54,6 +57,14 @@ dependencies {
 	// Testing
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'org.testcontainers:junit-jupiter'
+	testImplementation 'org.testcontainers:mysql'
+	testImplementation 'org.testcontainers:kafka'
+
+	testImplementation 'org.mockito:mockito-inline:5.2.0'
+	testImplementation 'com.github.tomakehurst:wiremock-jre8:2.35.0'
+	testImplementation 'net.datafaker:datafaker:2.0.2'
 }
 
 tasks.named('test') {

@@ -1,19 +1,24 @@
 package com.hnh.example.transaction_example.domain;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.CreationTimestamp;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Entity
-@Table(
-    name = "idempotency_keys",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"merchant_id", "idempotency_key"})
-)
+@Table(name = "idempotency_keys", uniqueConstraints = @UniqueConstraint(columnNames = { "merchant_id",
+        "idempotency_key" }))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -47,8 +52,8 @@ public class IdempotencyKey {
     private LocalDateTime expiresAt;
 
     // Constructor for creating new idempotency keys
-    public static IdempotencyKey create(String merchantId, String key, String requestHash, 
-                                      Integer responseCode, String responseBody) {
+    public static IdempotencyKey create(String merchantId, String key, String requestHash,
+            Integer responseCode, String responseBody) {
         return IdempotencyKey.builder()
                 .merchantId(merchantId)
                 .key(key)
