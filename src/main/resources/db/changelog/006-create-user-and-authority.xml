@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="006-create-user-and-authority" author="payment-system">
+        <sql>
+            -- Create user table
+            CREATE TABLE app_user (
+                id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                first_name VARCHAR(255) NOT NULL,
+                last_name VARCHAR(255) NOT NULL,
+                phone_number VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            );
+
+            -- Create authority table
+            CREATE TABLE authority (
+                name VARCHAR(50) PRIMARY KEY
+            );
+
+            -- Create user_authority table
+            
+            CREATE TABLE user_authority (
+                user_id BIGINT,
+                authority_name VARCHAR(50),
+                PRIMARY KEY (user_id, authority_name),
+                FOREIGN KEY (user_id) REFERENCES app_user(id),
+                FOREIGN KEY (authority_name) REFERENCES authority(name)
+            );
+
+            -- Insert default authorities
+            INSERT INTO authority (name) VALUES ('ROLE_ADMIN');
+            INSERT INTO authority (name) VALUES ('ROLE_USER');
+            INSERT INTO authority (name) VALUES ('ROLE_ANONYMOUS');
+
+            -- Insert default user
+            INSERT INTO app_user (email, password_hash, first_name, last_name, phone_number) VALUES ('admin@example.com', '$2a$10$eW91cl9zZWN1cmVfYmFzZTY0X2tleV9oZXJl', 'Admin', 'Admin', '1234567890');
+            INSERT INTO user_authority (user_id, authority_name) VALUES (1, 'ROLE_ADMIN');
+        </sql>
+        
+        
+    </changeSet>
+</databaseChangeLog>

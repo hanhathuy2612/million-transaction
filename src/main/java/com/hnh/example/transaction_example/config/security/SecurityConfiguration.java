@@ -1,4 +1,4 @@
-package com.hnh.example.transaction_example.config;
+package com.hnh.example.transaction_example.config.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,6 +7,10 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -33,16 +37,16 @@ public class SecurityConfiguration {
                     authorize.requestMatchers("/v3/api-docs/**").permitAll();
                     authorize.requestMatchers("/api-docs/**").permitAll();
                     authorize.requestMatchers("/actuator/**").permitAll();
-                    authorize.requestMatchers("/error").permitAll();
-                    authorize.requestMatchers("/").permitAll();
-                    // For development, allow all requests without authentication
-                    // In production, you would use: authorize.anyRequest().authenticated();
-                    authorize.anyRequest().permitAll();
+                    authorize.requestMatchers("/api/v1/auth/login/**").permitAll();
+                    authorize.requestMatchers("/api/v1/auth/register/**").permitAll();
+                    authorize.anyRequest().authenticated();
                 });
 
-        // For development, disable OAuth2
-        // In production, you would use: http.oauth2ResourceServer(oauth2 ->
-        // oauth2.jwt(Customizer.withDefaults()));
+        http.exceptionHandling(
+                exceptions -> exceptions
+                        .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
+                        .accessDeniedHandler(new BearerTokenAccessDeniedHandler()))
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
 
         return http.build();
     }
@@ -59,5 +63,10 @@ public class SecurityConfiguration {
         source.registerCorsConfiguration("/**", config);
 
         return new CorsFilter(source);
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

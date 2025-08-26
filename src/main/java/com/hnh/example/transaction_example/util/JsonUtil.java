@@ -101,9 +101,6 @@ public final class JsonUtil {
         // Include all fields for serialization
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
 
-        // Enable default typing for Redis serialization compatibility
-        mapper.activateDefaultTyping(LaissezFaireSubTypeValidator.instance, ObjectMapper.DefaultTyping.NON_FINAL);
-
         // Pretty print for debugging (can be disabled in production)
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }

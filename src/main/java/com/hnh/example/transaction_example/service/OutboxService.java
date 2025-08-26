@@ -8,11 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-
-import com.hnh.example.transaction_example.util.JsonUtil;
 import com.hnh.example.transaction_example.domain.OutboxEvent;
 import com.hnh.example.transaction_example.domain.Payment;
 import com.hnh.example.transaction_example.repository.OutboxEventRepository;
+import com.hnh.example.transaction_example.util.JsonUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,7 @@ public class OutboxService {
      * Create outbox event for payment authorization
      * Must be called within the same transaction as payment creation
      */
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional
     public void publishPaymentAuthorized(Payment payment) {
         Map<String, Object> payload = createPaymentEventPayload(payment, "authorized");
         OutboxEvent event = OutboxEvent.paymentAuthorized(payment.getId(), serializePayload(payload));
@@ -39,7 +38,7 @@ public class OutboxService {
     /**
      * Create outbox event for payment capture
      */
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publishPaymentCaptured(Payment payment, java.math.BigDecimal capturedAmount) {
         Map<String, Object> payload = createPaymentEventPayload(payment, "captured");
         payload.put("capturedAmount", capturedAmount);

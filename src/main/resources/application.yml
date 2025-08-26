@@ -25,15 +25,17 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
     enabled: true
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 2000ms
-    jedis:
-      pool:
-        max-active: 20
-        max-idle: 10
-        min-idle: 5
+  data:
+    redis:
+      host: localhost
+      password: redis123
+      port: 6379
+      timeout: 2000ms
+      jedis:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -66,9 +68,9 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
 
 # Logging configuration
@@ -77,5 +79,64 @@ logging:
     com.hnh.example.transaction_example: DEBUG
     org.springframework.kafka: INFO
     org.springframework.data.redis: INFO
+    org.springdoc: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# =========================
+# Springdoc / Swagger-UI
+# =========================
+springdoc:
+  # --- OpenAPI JSON endpoints ---
+  api-docs:
+    # Keep the canonical path; tools expect /v3/api-docs
+    path: /v3/api-docs
+    # Optional: smaller, cleaner schemas
+    resolve-schema-properties: true
+    remove-broken-reference-definitions: true
+    # Optional: disable caching while developing (default is true in prod)
+    enabled: true
+  # --- Swagger UI (HTML/JS app) ---
+  swagger-ui:
+    # UI entry (redirects to /swagger-ui/index.html)
+    path: /swagger-ui.html
+    # Tell UI where your spec lives (prevents petstore default)
+    url: /v3/api-docs
+    # Let UI auto-load the URL above
+    disable-swagger-default-url: true
+    # (Only use this if you’ve changed api-docs.path or have a base path)
+    config-url: /v3/api-docs/swagger-config
+    # Sorting & layout
+    operations-sorter: method # alpha | method
+    tags-sorter: alpha # alpha or method
+    doc-expansion: none # none | list | full
+    deep-linking: true
+    display-request-duration: true
+    display-operation-id: false
+    default-models-expand-depth: 1
+    default-model-expand-depth: 1
+    default-model-renderer: example # model | example
+    show-common-extensions: true
+    show-extensions: true
+    # "Try it out" & code snippets
+    try-it-out-enabled: true
+    request-snippets-enabled: true
+    response-snippets-enabled: true
+    # Syntax highlight in the UI
+    syntax-highlight:
+      activated: true
+      theme: agate # vs, obsidian, agate, etc.
+    # UI extras
+    filter: true # client-side filter box
+  # --- Limit scanning scope (recommended) ---
+  # Only scan your API package(s) and only include path patterns below.
+  packages-to-scan: com.hnh.example.transaction_example.controller
+  paths-to-match: /api/**
+
+app:
+  security:
+    authentication:
+      jwt:
+        base64-secret: HPEQnZmHLmwAZ0bsQKu3LpOZjr/6AWMUdXl9TE9u0LFWti0oUcrMWmxVwANO6fjgzhY7c2JJ+5DMjEl4caAqMw==
+        token-validity-in-seconds: 604800 # 1 week
+        token-validity-in-seconds-for-remember-me: 604800 # 1 week

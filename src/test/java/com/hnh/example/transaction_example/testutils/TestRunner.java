@@ -1,10 +1,16 @@
 package com.hnh.example.transaction_example.testutils;
 
-import com.hnh.example.transaction_example.util.JsonUtil;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hnh.example.transaction_example.util.JsonUtil;
 
 /**
  * Test configuration runner that provides test-specific beans and overrides
@@ -18,8 +24,8 @@ public class TestRunner {
      */
     @Bean
     @Primary
-    public com.fasterxml.jackson.databind.ObjectMapper testObjectMapper() {
-        return com.hnh.example.transaction_example.util.JsonUtil.createCustomMapper();
+    public ObjectMapper testObjectMapper() {
+        return JsonUtil.createCustomMapper();
     }
 
     /**
@@ -27,9 +33,8 @@ public class TestRunner {
      */
     @Bean
     @Primary
-    public org.springframework.core.task.TaskExecutor testTaskExecutor() {
-        org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor executor = 
-                new org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor();
+    public TaskExecutor testTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(2);
         executor.setMaxPoolSize(4);
         executor.setQueueCapacity(10);
@@ -43,12 +48,11 @@ public class TestRunner {
      */
     @Bean
     @Primary
-    public org.springframework.web.client.RestTemplate testRestTemplate() {
-        org.springframework.http.client.SimpleClientHttpRequestFactory factory = 
-                new org.springframework.http.client.SimpleClientHttpRequestFactory();
+    public RestTemplate testRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000);
         factory.setReadTimeout(10000);
-        return new org.springframework.web.client.RestTemplate(factory);
+        return new RestTemplate(factory);
     }
 
     /**
@@ -58,9 +62,8 @@ public class TestRunner {
     @Primary
     public java.util.Map<String, String> testMerchantWebhookUrls() {
         return java.util.Map.of(
-                "merchant_1", "http://localhost:8080/webhooks/payments",
-                "merchant_2", "http://localhost:8080/webhooks/payments"
-        );
+                "merchant_1", "http://localhost:8888/webhooks/payments",
+                "merchant_2", "http://localhost:8888/webhooks/payments");
     }
 
     /**
@@ -71,7 +74,6 @@ public class TestRunner {
     public java.util.Map<String, String> testMerchantWebhookSecrets() {
         return java.util.Map.of(
                 "merchant_1", "test_webhook_secret_1",
-                "merchant_2", "test_webhook_secret_2"
-        );
+                "merchant_2", "test_webhook_secret_2");
     }
 }

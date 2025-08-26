@@ -1,37 +1,41 @@
 package com.hnh.example.transaction_example.e2e;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hnh.example.transaction_example.domain.Payment;
-import com.hnh.example.transaction_example.dto.PaymentRequest;
-import com.hnh.example.transaction_example.dto.PaymentResponse;
-import com.hnh.example.transaction_example.dto.CaptureRequest;
-import com.hnh.example.transaction_example.dto.RefundRequest;
-import com.hnh.example.transaction_example.repository.PaymentRepository;
-import com.hnh.example.transaction_example.testutils.TestContainerConfig;
-import com.hnh.example.transaction_example.testutils.TestDataBuilder;
-import com.hnh.example.transaction_example.testutils.MockWebhookServer;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.awaitility.Awaitility.await;
+import com.hnh.example.transaction_example.domain.Payment;
+import com.hnh.example.transaction_example.dto.CaptureRequest;
+import com.hnh.example.transaction_example.dto.PaymentRequest;
+import com.hnh.example.transaction_example.dto.PaymentResponse;
+import com.hnh.example.transaction_example.dto.RefundRequest;
+import com.hnh.example.transaction_example.repository.PaymentRepository;
+import com.hnh.example.transaction_example.testutils.MockWebhookServer;
+import com.hnh.example.transaction_example.testutils.TestContainerConfig;
+import com.hnh.example.transaction_example.testutils.TestDataBuilder;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestContainerConfig.class)
@@ -50,9 +54,6 @@ class PaymentE2ETest {
 
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
-
-    @Autowired
-    private ObjectMapper objectMapper;
 
     private MockWebhookServer mockWebhookServer;
     private String baseUrl;
@@ -76,7 +77,7 @@ class PaymentE2ETest {
             mockWebhookServer.stop();
         }
         // Clean up Redis
-        redisTemplate.getConnectionFactory().getConnection().flushAll();
+        redisTemplate.delete(redisTemplate.keys("*"));
     }
 
     @Nested

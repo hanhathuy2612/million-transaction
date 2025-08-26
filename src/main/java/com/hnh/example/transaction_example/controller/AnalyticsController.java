@@ -109,6 +109,7 @@ public class AnalyticsController {
 
     // Schema classes for OpenAPI documentation
     @Schema(description = "Payment analytics response")
+    @lombok.Data
     public static class AnalyticsResponse {
         @Schema(description = "Total payment volume", example = "15000.00")
         private Double totalVolume;
@@ -136,6 +137,7 @@ public class AnalyticsController {
     }
 
     @Schema(description = "Payment metrics response")
+    @lombok.Data
     public static class PaymentMetricsResponse {
         @Schema(description = "Merchant identifier", example = "merchant_12345")
         private String merchantId;
@@ -169,6 +171,7 @@ public class AnalyticsController {
     }
 
     @Schema(description = "Error response")
+    @lombok.Data
     public static class ErrorResponse {
         @Schema(description = "Timestamp of the error", example = "2024-01-15T10:30:00Z")
         private String timestamp;
