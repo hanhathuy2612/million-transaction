@@ -7,9 +7,9 @@ spring:
 
   # Test database configuration (overridden by TestContainers)
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
-    password:
+    password: 
     driver-class-name: org.h2.Driver
 
   jpa:
@@ -57,42 +57,20 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       max-poll-records: 100
 
-# Test outbox relay configuration
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration
+
+# Disable scheduling for tests
 outbox:
   relay:
-    interval: 1000 # Faster interval for testing
+    interval: 0
 
-# Test management endpoints
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
-  metrics:
-    export:
-      prometheus:
-        enabled: false # Disable prometheus for tests
-
-# Test logging configuration
+# Simple logging for tests
 logging:
   level:
-    com.hnh.example.transaction_example: DEBUG
-    org.springframework.kafka: WARN
-    org.springframework.data.redis: WARN
-    org.springframework.security: WARN
-    org.springframework.web: WARN
-    org.hibernate: WARN
-    org.testcontainers: INFO
-  pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-
-# JWT configuration for tests
-app:
-  security:
-    authentication:
-      jwt:
-        base64-secret: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHk=
-        expiration: 86400000 # 24 hours
+    com.hnh.example.transaction_example: INFO
+    org.springframework.web: INFO
