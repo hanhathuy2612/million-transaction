@@ -66,8 +66,11 @@ dependencies {
 	testImplementation 'org.testcontainers:kafka'
 
 	testImplementation 'org.mockito:mockito-inline:5.2.0'
-	testImplementation 'com.github.tomakehurst:wiremock-jre8:2.35.0'
-	testImplementation 'net.datafaker:datafaker:2.0.2'
+        // WireMock removed due to Java 17+ compatibility issues
+    testImplementation 'net.datafaker:datafaker:2.0.2'
+    testImplementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+    testRuntimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
+    testRuntimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 }
 
 tasks.named('test') {

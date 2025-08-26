@@ -4,14 +4,14 @@ server:
 spring:
   application:
     name: millions-transaction-test
-    
+
   # Test database configuration (overridden by TestContainers)
   datasource:
     url: jdbc:h2:mem:testdb
     username: sa
-    password: 
+    password:
     driver-class-name: org.h2.Driver
-    
+
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -20,11 +20,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: false
-        
+
   # Disable Liquibase for tests (use JPA DDL instead)
   liquibase:
     enabled: false
-    
+
   # Test Redis configuration (overridden by TestContainers)
   redis:
     host: localhost
@@ -35,7 +35,7 @@ spring:
         max-active: 8
         max-idle: 8
         min-idle: 0
-        
+
   # Test Kafka configuration (overridden by TestContainers)
   kafka:
     bootstrap-servers: localhost:9092
@@ -86,3 +86,11 @@ logging:
     org.testcontainers: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# JWT configuration for tests
+app:
+  security:
+    authentication:
+      jwt:
+        base64-secret: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2VzLW9ubHk=
+        expiration: 86400000 # 24 hours

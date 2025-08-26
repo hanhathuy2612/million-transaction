@@ -24,8 +24,15 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.lang.NonNull;
+import org.springframework.http.client.ClientHttpRequestExecution;
+import org.springframework.http.HttpRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import java.io.IOException;
+import java.util.List;
 
 import com.hnh.example.transaction_example.domain.Payment;
 import com.hnh.example.transaction_example.dto.CaptureRequest;
@@ -33,6 +40,7 @@ import com.hnh.example.transaction_example.dto.PaymentRequest;
 import com.hnh.example.transaction_example.dto.PaymentResponse;
 import com.hnh.example.transaction_example.dto.RefundRequest;
 import com.hnh.example.transaction_example.repository.PaymentRepository;
+import com.hnh.example.transaction_example.testutils.JwtTestUtil;
 import com.hnh.example.transaction_example.testutils.MockWebhookServer;
 import com.hnh.example.transaction_example.testutils.TestContainerConfig;
 import com.hnh.example.transaction_example.testutils.TestDataBuilder;
@@ -68,7 +76,17 @@ class PaymentE2ETest {
 
         mockWebhookServer = new MockWebhookServer();
         mockWebhookServer.start();
-        mockWebhookServer.stubSuccessfulWebhook();
+        // Add token to header for all requests via interceptor
+        restTemplate.getRestTemplate().setInterceptors(List.of(new ClientHttpRequestInterceptor() {
+            @Override
+            @NonNull
+            public ClientHttpResponse intercept(@NonNull HttpRequest request, @NonNull byte[] body,
+                    @NonNull ClientHttpRequestExecution execution)
+                    throws IOException {
+                request.getHeaders().setBearerAuth(JwtTestUtil.generateTestToken());
+                return execution.execute(request, body);
+            }
+        }));
     }
 
     @AfterEach
@@ -107,7 +125,6 @@ class PaymentE2ETest {
 
             ResponseEntity<PaymentResponse> createResponse = restTemplate.exchange(
                     baseUrl, HttpMethod.POST, createEntity, PaymentResponse.class);
-
             // Verify payment creation
             assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
             assertThat(createResponse.getBody()).isNotNull();
