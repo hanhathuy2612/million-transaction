@@ -41,7 +41,7 @@ class PaymentControllerTest {
     void setUp() {
         merchantId = "merchant_1";
         idempotencyKey = "test_" + UUID.randomUUID().toString().substring(0, 8);
-        
+
         paymentRequest = PaymentRequest.builder()
                 .merchantId(merchantId)
                 .amount(BigDecimal.valueOf(100.00))

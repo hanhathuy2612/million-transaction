@@ -4,7 +4,7 @@
     "java.compile.nullAnalysis.mode": "automatic",
     // Java formatting settings
     "java.format.settings.url": "",
-    "java.format.settings.profile": "GoogleStyle",
+    "java.format.settings.profile": "",
     "java.format.onType.enabled": true,
     "java.format.onSave.enabled": true,
     // Editor formatting
@@ -19,5 +19,5 @@
     "java.format.indentation.style": "space",
     // Import organization
     "java.import.gradle.enabled": true,
-    "java.import.maven.enabled": true,
+    "java.import.maven.enabled": true
 }

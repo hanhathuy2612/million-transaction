@@ -52,9 +52,7 @@ public class PaymentController {
     @PostMapping
     public ResponseEntity<PaymentResponse> createPayment(
             @Parameter(description = "Merchant identifier", required = true) @RequestHeader("X-Merchant-ID") String merchantId,
-
             @Parameter(description = "Idempotency key to prevent duplicate charges", required = true) @RequestHeader("Idempotency-Key") String idempotencyKey,
-
             @Parameter(description = "Payment creation request", required = true) @Valid @RequestBody PaymentRequest request) {
 
         log.info("Creating payment for merchant: {} with idempotency key: {}", merchantId, idempotencyKey);
@@ -87,7 +85,6 @@ public class PaymentController {
     @GetMapping
     public Page<PaymentResponse> listPayments(
             @Parameter(description = "Merchant identifier", required = true) @RequestHeader("X-Merchant-ID") String merchantId,
-
             @Parameter(description = "Pagination parameters") @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
 
         log.debug("Listing payments for merchant: {} with pagination: {}", merchantId, pageable);
@@ -104,9 +101,7 @@ public class PaymentController {
     @PostMapping("/{paymentId}/capture")
     public ResponseEntity<PaymentResponse> capturePayment(
             @Parameter(description = "Payment unique identifier", required = true) @PathVariable UUID paymentId,
-
             @Parameter(description = "Idempotency key to prevent duplicate captures") @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
-
             @Parameter(description = "Capture request details", required = true) @Valid @RequestBody CaptureRequest request) {
 
         log.info("Capturing payment: {} with amount: {}", paymentId, request.getAmount());
@@ -123,9 +118,7 @@ public class PaymentController {
     @PostMapping("/{paymentId}/refunds")
     public ResponseEntity<PaymentResponse> refundPayment(
             @Parameter(description = "Payment unique identifier", required = true) @PathVariable UUID paymentId,
-
             @Parameter(description = "Idempotency key to prevent duplicate refunds", required = true) @RequestHeader("Idempotency-Key") String idempotencyKey,
-
             @Parameter(description = "Refund request details", required = true) @Valid @RequestBody RefundRequest request) {
 
         log.info("Refunding payment: {} with amount: {}", paymentId, request.getAmount());
