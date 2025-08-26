@@ -26,15 +26,17 @@ spring:
     enabled: false
 
   # Test Redis configuration (overridden by TestContainers)
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 1000ms
-    jedis:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: redis123
+      timeout: 1000ms
+      jedis:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
 
   # Test Kafka configuration (overridden by TestContainers)
   kafka:
