@@ -2,18 +2,13 @@ package com.hnh.example.transaction_example.controller;
 
 import java.util.UUID;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.hnh.example.transaction_example.dto.CaptureRequest;
 import com.hnh.example.transaction_example.dto.PaymentRequest;
@@ -30,6 +25,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import static com.hnh.example.transaction_example.constant.HeaderConstant.MERCHANT_ID;
 
 @RestController
 @RequestMapping("/api/v1/payments")
@@ -84,8 +81,8 @@ public class PaymentController {
     })
     @GetMapping
     public Page<PaymentResponse> listPayments(
-            @Parameter(description = "Merchant identifier", required = true) @RequestHeader("X-Merchant-ID") String merchantId,
-            @Parameter(description = "Pagination parameters") @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+            @RequestHeader(MERCHANT_ID) String merchantId,
+            @ParameterObject @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
 
         log.debug("Listing payments for merchant: {} with pagination: {}", merchantId, pageable);
         return paymentService.listPayments(merchantId, pageable);
