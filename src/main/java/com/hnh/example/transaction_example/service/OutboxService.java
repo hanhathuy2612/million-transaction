@@ -1,6 +1,7 @@
 package com.hnh.example.transaction_example.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +52,7 @@ public class OutboxService {
     /**
      * Create outbox event for payment refund
      */
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publishPaymentRefunded(Payment payment, java.math.BigDecimal refundedAmount) {
         Map<String, Object> payload = createPaymentEventPayload(payment, "refunded");
         payload.put("refundedAmount", refundedAmount);
@@ -65,7 +66,7 @@ public class OutboxService {
     /**
      * Create outbox event for payment failure
      */
-    @Transactional(propagation = Propagation.MANDATORY)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publishPaymentFailed(Payment payment, String failureReason) {
         Map<String, Object> payload = createPaymentEventPayload(payment, "failed");
         payload.put("failureReason", failureReason);
@@ -110,16 +111,17 @@ public class OutboxService {
     }
 
     private Map<String, Object> createPaymentEventPayload(Payment payment, String eventType) {
-        return Map.of(
-                "paymentId", payment.getId().toString(),
-                "merchantId", payment.getMerchantId(),
-                "amount", payment.getAmount(),
-                "currency", payment.getCurrency(),
-                "status", payment.getStatus().toString(),
-                "eventType", eventType,
-                "timestamp", LocalDateTime.now().toString(),
-                "referenceId", payment.getReferenceId() != null ? payment.getReferenceId() : "",
-                "paymentMethodId", payment.getPaymentMethodId());
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("paymentId", payment.getId().toString());
+        payload.put("merchantId", payment.getMerchantId());
+        payload.put("amount", payment.getAmount());
+        payload.put("currency", payment.getCurrency());
+        payload.put("status", payment.getStatus().toString());
+        payload.put("eventType", eventType);
+        payload.put("timestamp", LocalDateTime.now().toString());
+        payload.put("referenceId", payment.getReferenceId() != null ? payment.getReferenceId() : "");
+        payload.put("paymentMethodId", payment.getPaymentMethodId());
+        return payload;
     }
 
     private String serializePayload(Map<String, Object> payload) {

@@ -1,16 +1,5 @@
 package com.hnh.example.transaction_example.service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.hnh.example.transaction_example.domain.Payment;
 import com.hnh.example.transaction_example.domain.PaymentLedger;
 import com.hnh.example.transaction_example.dto.CaptureRequest;
@@ -19,9 +8,18 @@ import com.hnh.example.transaction_example.dto.PaymentResponse;
 import com.hnh.example.transaction_example.dto.RefundRequest;
 import com.hnh.example.transaction_example.repository.PaymentLedgerRepository;
 import com.hnh.example.transaction_example.repository.PaymentRepository;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +34,7 @@ public class PaymentService {
     /**
      * Create a new payment with idempotency support
      */
+    @Transactional
     public ResponseEntity<PaymentResponse> createPayment(String merchantId, String idempotencyKey,
             PaymentRequest request) {
         // Check for idempotent request
@@ -60,8 +59,7 @@ public class PaymentService {
         return response;
     }
 
-    @Transactional
-    private ResponseEntity<PaymentResponse> createNewPayment(PaymentRequest request) {
+    protected ResponseEntity<PaymentResponse> createNewPayment(PaymentRequest request) {
         try {
             // Validate business rules
             validatePaymentRequest(request);

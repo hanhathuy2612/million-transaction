@@ -193,7 +193,7 @@ public class AnalyticsService {
 
         log.info(METRIC_LOG_FORMAT, EVENT_TYPE_AUTHORIZED, merchantId, currency, amount, getCurrentTimestamp());
 
-        // Example metric recording (pseudo-code):
+        // Example metric recording (pseudocode):
         // meterRegistry.counter("payments.authorized.count",
         // Tags.of("merchant", merchantId, "currency", currency)).increment();
         // meterRegistry.gauge("payments.authorized.amount",
