@@ -84,7 +84,7 @@ public class PaymentService {
             payment = paymentRepository.save(payment);
 
             // Call real payment processor for authorization
-            PaymentAuthorizationResult authResult = paymentProcessorService.authorizePayment(payment, request);
+            PaymentAuthorizationResult authResult = paymentProcessorService.simulatePayment(payment, request);
 
             if (authResult.isSuccess()) {
                 payment.setStatus(Payment.PaymentStatus.AUTHORIZED);

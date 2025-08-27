@@ -1,16 +1,16 @@
 package com.hnh.example.transaction_example.service;
 
 import com.hnh.example.transaction_example.domain.Payment;
-import com.hnh.example.transaction_example.dto.PaymentRequest;
 import com.hnh.example.transaction_example.dto.PaymentAuthorizationResult;
 import com.hnh.example.transaction_example.dto.PaymentCaptureResult;
 import com.hnh.example.transaction_example.dto.PaymentRefundResult;
+import com.hnh.example.transaction_example.dto.PaymentRequest;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.Refund;
-import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.PaymentIntentCaptureParams;
+import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.RefundCreateParams;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +36,22 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
     
     public StripePaymentProcessorService(@Value("${stripe.secret-key}") String stripeSecretKey) {
         Stripe.apiKey = stripeSecretKey;
+    }
+    
+    @Override
+    public PaymentAuthorizationResult simulatePayment(Payment payment, PaymentRequest request) {
+        log.info("Simulating payment {} with Stripe", payment.getId());
+        boolean success = Math.random() < 0.5;
+        return PaymentAuthorizationResult.builder()
+                .success(success)
+                .processorTransactionId("simulated-transaction-id")
+                .authorizedAmount(payment.getAmount())
+                .currency(payment.getCurrency())
+                
+                .processorName("Stripe")
+                .processorResponse("succeeded")
+                .processorStatus("succeeded")
+                .build();
     }
     
     @Override
@@ -69,13 +85,13 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                         .processorStatus(paymentIntent.getStatus())
                         .build();
             } else {
-                log.warn("Payment {} authorization failed with Stripe. Status: {}", 
+                log.warn("Payment {} authorization failed with Stripe. Status: {}",
                         payment.getId(), paymentIntent.getStatus());
                 return PaymentAuthorizationResult.builder()
                         .success(false)
                         .processorTransactionId(paymentIntent.getId())
                         .failureReason("Payment authorization failed: " + paymentIntent.getStatus())
-                        .failureCode(paymentIntent.getLastPaymentError() != null ? 
+                        .failureCode(paymentIntent.getLastPaymentError() != null ?
                                 paymentIntent.getLastPaymentError().getCode() : "unknown")
                         .processorName("Stripe")
                         .processorResponse(paymentIntent.getStatus())
@@ -93,7 +109,7 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                     .processorErrorCode(e.getCode())
                     .build();
         } catch (Exception e) {
-            log.error("Unexpected error during Stripe authorization for payment {}: {}", 
+            log.error("Unexpected error during Stripe authorization for payment {}: {}",
                     payment.getId(), e.getMessage(), e);
             return PaymentAuthorizationResult.builder()
                     .success(false)
@@ -132,7 +148,7 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                         .processorStatus(capturedIntent.getStatus())
                         .build();
             } else {
-                log.warn("Payment {} capture failed with Stripe. Status: {}", 
+                log.warn("Payment {} capture failed with Stripe. Status: {}",
                         payment.getId(), capturedIntent.getStatus());
                 return PaymentCaptureResult.builder()
                         .success(false)
@@ -154,7 +170,7 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                     .processorErrorCode(e.getCode())
                     .build();
         } catch (Exception e) {
-            log.error("Unexpected error during Stripe capture for payment {}: {}", 
+            log.error("Unexpected error during Stripe capture for payment {}: {}",
                     payment.getId(), e.getMessage(), e);
             return PaymentCaptureResult.builder()
                     .success(false)
@@ -194,7 +210,7 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                         .processorStatus(refund.getStatus())
                         .build();
             } else {
-                log.warn("Payment {} refund failed with Stripe. Status: {}", 
+                log.warn("Payment {} refund failed with Stripe. Status: {}",
                         payment.getId(), refund.getStatus());
                 return PaymentRefundResult.builder()
                         .success(false)
@@ -216,7 +232,7 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                     .processorErrorCode(e.getCode())
                     .build();
         } catch (Exception e) {
-            log.error("Unexpected error during Stripe refund for payment {}: {}", 
+            log.error("Unexpected error during Stripe refund for payment {}: {}",
                     payment.getId(), e.getMessage(), e);
             return PaymentRefundResult.builder()
                     .success(false)

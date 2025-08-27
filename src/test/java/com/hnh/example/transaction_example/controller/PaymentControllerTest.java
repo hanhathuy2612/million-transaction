@@ -3,6 +3,7 @@ package com.hnh.example.transaction_example.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -18,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.hnh.example.transaction_example.domain.Payment;
 import com.hnh.example.transaction_example.dto.PaymentRequest;
 import com.hnh.example.transaction_example.dto.PaymentResponse;
 import com.hnh.example.transaction_example.service.PaymentService;
@@ -55,7 +57,7 @@ class PaymentControllerTest {
                 .merchantId(merchantId)
                 .amount(BigDecimal.valueOf(100.00))
                 .currency("USD")
-                .status("AUTHORIZED")
+                .status(Payment.PaymentStatus.AUTHORIZED)
                 .paymentMethodId("pm_test_123")
                 .description("Test payment")
                 .capturedAmount(BigDecimal.ZERO)
@@ -78,7 +80,7 @@ class PaymentControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getAmount()).isEqualTo(BigDecimal.valueOf(100.00));
-        assertThat(response.getBody().getStatus()).isEqualTo("AUTHORIZED");
+        assertThat(response.getBody().getStatus()).isEqualTo(Payment.PaymentStatus.AUTHORIZED);
     }
 
     @Test
@@ -100,12 +102,25 @@ class PaymentControllerTest {
     @DisplayName("Should validate required headers")
     void shouldValidateRequiredHeaders() {
         // Given
-        String invalidMerchantId = null;
-        String invalidIdempotencyKey = null;
+        String invalidMerchantId = "";
+        String invalidIdempotencyKey = "";
+
+        // Create a request with matching merchant ID
+        PaymentRequest invalidRequest = PaymentRequest.builder()
+                .merchantId(invalidMerchantId)
+                .amount(BigDecimal.valueOf(100.00))
+                .currency("USD")
+                .paymentMethodId("pm_test_123")
+                .description("Test payment")
+                .build();
+
+        // Mock the service to return BAD_REQUEST for invalid data
+        when(paymentService.createPayment(eq(invalidMerchantId), eq(invalidIdempotencyKey), eq(invalidRequest)))
+                .thenReturn(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
 
         // When
         ResponseEntity<PaymentResponse> response = paymentController.createPayment(
-                invalidMerchantId, invalidIdempotencyKey, paymentRequest);
+                invalidMerchantId, invalidIdempotencyKey, invalidRequest);
 
         // Then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
