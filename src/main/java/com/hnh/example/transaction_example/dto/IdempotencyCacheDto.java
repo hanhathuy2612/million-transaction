@@ -14,13 +14,13 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class IdempotencyCacheDto implements Serializable {
-    
+
     private String requestHash;
     private Integer statusCode;
     private String responseBody;
     private String headers;
     private Long timestamp;
-    
+
     public IdempotencyCacheDto(String requestHash, Integer statusCode, String responseBody, String headers) {
         this.requestHash = requestHash;
         this.statusCode = statusCode;

@@ -1,10 +1,22 @@
 package com.hnh.example.transaction_example.service;
 
-import com.hnh.example.transaction_example.domain.IdempotencyKey;
-import com.hnh.example.transaction_example.dto.IdempotencyCacheDto;
-import com.hnh.example.transaction_example.repository.IdempotencyKeyRepository;
-import com.hnh.example.transaction_example.util.JsonUtil;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,12 +27,9 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.hnh.example.transaction_example.domain.IdempotencyKey;
+import com.hnh.example.transaction_example.dto.IdempotencyCacheDto;
+import com.hnh.example.transaction_example.repository.IdempotencyKeyRepository;
 
 @ExtendWith(MockitoExtension.class)
 class IdempotencyServiceTest {
@@ -47,13 +56,13 @@ class IdempotencyServiceTest {
     }
 
     @Test
+    @DisplayName("Check Idempotency with valid Redis cache hit")
     void testCheckIdempotency_WithValidRedisCache() {
         // Given
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         String actualHash = idempotencyService.generateRequestHash(REQUEST_BODY);
         IdempotencyCacheDto cacheDto = new IdempotencyCacheDto(
-                actualHash, 200, "{\"status\":\"success\"}", "{}"
-        );
+                actualHash, 200, "{\"status\":\"success\"}", "{}");
         when(valueOperations.get(anyString())).thenReturn(cacheDto);
 
         // When
@@ -67,17 +76,17 @@ class IdempotencyServiceTest {
     }
 
     @Test
+    @DisplayName("Check Idempotency with database fallback")
     void testCheckIdempotency_WithDatabaseFallback() {
         // Given
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(anyString())).thenReturn(null);
-        
+
         // Generate the actual hash that will be used
         String actualHash = idempotencyService.generateRequestHash(REQUEST_BODY);
-        
+
         IdempotencyKey dbKey = IdempotencyKey.create(
-                MERCHANT_ID, IDEMPOTENCY_KEY, actualHash, 200, "{\"status\":\"success\"}"
-        );
+                MERCHANT_ID, IDEMPOTENCY_KEY, actualHash, 200, "{\"status\":\"success\"}");
         when(idempotencyKeyRepository.findByMerchantIdAndKey(MERCHANT_ID, IDEMPOTENCY_KEY))
                 .thenReturn(Optional.of(dbKey));
 
@@ -133,16 +142,15 @@ class IdempotencyServiceTest {
         // Given
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(anyString())).thenReturn(null);
-        
+
         // Generate the actual hash that will be used
         String actualHash = idempotencyService.generateRequestHash(REQUEST_BODY);
-        
+
         IdempotencyKey expiredKey = IdempotencyKey.create(
-                MERCHANT_ID, IDEMPOTENCY_KEY, actualHash, 200, "{\"status\":\"success\"}"
-        );
+                MERCHANT_ID, IDEMPOTENCY_KEY, actualHash, 200, "{\"status\":\"success\"}");
         // Set expired time
         expiredKey.setExpiresAt(LocalDateTime.now().minusDays(2));
-        
+
         when(idempotencyKeyRepository.findByMerchantIdAndKey(MERCHANT_ID, IDEMPOTENCY_KEY))
                 .thenReturn(Optional.of(expiredKey));
 
@@ -159,16 +167,15 @@ class IdempotencyServiceTest {
         // Given
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get(anyString())).thenReturn(null);
-        
+
         IdempotencyKey dbKey = IdempotencyKey.create(
-                MERCHANT_ID, IDEMPOTENCY_KEY, "differentHash", 200, "{\"status\":\"success\"}"
-        );
+                MERCHANT_ID, IDEMPOTENCY_KEY, "differentHash", 200, "{\"status\":\"success\"}");
         when(idempotencyKeyRepository.findByMerchantIdAndKey(MERCHANT_ID, IDEMPOTENCY_KEY))
                 .thenReturn(Optional.of(dbKey));
 
         // When & Then
-        assertThrows(IllegalArgumentException.class, () -> 
-                idempotencyService.checkIdempotency(MERCHANT_ID, IDEMPOTENCY_KEY, REQUEST_BODY));
+        assertThrows(IllegalArgumentException.class,
+                () -> idempotencyService.checkIdempotency(MERCHANT_ID, IDEMPOTENCY_KEY, REQUEST_BODY));
     }
 
     @Test
@@ -178,7 +185,7 @@ class IdempotencyServiceTest {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
         headers.add("Authorization", "Bearer token123");
-        
+
         ResponseEntity<Object> response = ResponseEntity.ok()
                 .headers(headers)
                 .body("Success");

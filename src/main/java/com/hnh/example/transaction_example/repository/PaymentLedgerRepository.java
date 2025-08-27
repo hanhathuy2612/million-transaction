@@ -34,8 +34,7 @@ public interface PaymentLedgerRepository extends JpaRepository<PaymentLedger, Lo
     List<PaymentLedger> findByPaymentIdAndDateRange(
             @Param("paymentId") UUID paymentId,
             @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate
-    );
+            @Param("endDate") LocalDateTime endDate);
 
     // Calculate total amount by entry type
     @Query("SELECT COALESCE(SUM(pl.deltaAmount), 0) FROM PaymentLedger pl WHERE pl.paymentId = :paymentId AND pl.entryType = :entryType")
@@ -46,8 +45,7 @@ public interface PaymentLedgerRepository extends JpaRepository<PaymentLedger, Lo
     List<PaymentLedger> findForReconciliation(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("entryTypes") List<EntryType> entryTypes
-    );
+            @Param("entryTypes") List<EntryType> entryTypes);
 
     // Count entries by type for metrics
     @Query("SELECT COUNT(pl) FROM PaymentLedger pl WHERE pl.entryType = :entryType AND pl.occurredAt >= :since")
