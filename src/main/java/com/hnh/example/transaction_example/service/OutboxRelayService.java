@@ -43,7 +43,7 @@ public class OutboxRelayService {
             // Publish events to Kafka
             List<CompletableFuture<SendResult<String, String>>> futures = events.stream()
                     .map(this::publishToKafka)
-                    .collect(Collectors.toList());
+                    .toList();
 
             // Wait for all publishes to complete
             CompletableFuture<Void> allOf = CompletableFuture.allOf(

@@ -7,24 +7,25 @@
 
     <changeSet id="002-create-payment-ledger-table" author="payment-system">
         <sql>
-            CREATE TABLE payment_ledger (
-                seq BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL,
-                payment_id BINARY(16) NOT NULL,
-                entry_type VARCHAR(50) NOT NULL,
-                delta_amount DECIMAL(19,2) NOT NULL,
-                balance_after DECIMAL(19,2) NOT NULL,
-                occurred_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                description TEXT,
-                reference_id VARCHAR(255)
+            CREATE TABLE payment_ledger
+            (
+                seq           BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL,
+                payment_id    BINARY(16) NOT NULL,
+                entry_type    VARCHAR(50)    NOT NULL,
+                delta_amount  DECIMAL(19, 2) NOT NULL,
+                balance_after DECIMAL(19, 2) NOT NULL,
+                occurred_at   TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                description   TEXT,
+                reference_id  VARCHAR(255)
             );
 
-            ALTER TABLE payment_ledger 
-            ADD CONSTRAINT fk_payment_ledger_payment_id 
-            FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE CASCADE;
+            ALTER TABLE payment_ledger
+                ADD CONSTRAINT fk_payment_ledger_payment_id
+                    FOREIGN KEY (payment_id) REFERENCES payments (id) ON DELETE CASCADE;
 
-            ALTER TABLE payment_ledger 
-            ADD CONSTRAINT chk_balance_after_positive 
-            CHECK (balance_after >= 0);
+            ALTER TABLE payment_ledger
+                ADD CONSTRAINT chk_balance_after_positive
+                    CHECK (balance_after >= 0);
         </sql>
     </changeSet>
 
