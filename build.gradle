@@ -26,6 +26,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-integration'
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
 	
 	// OAuth2 Resource Server
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
@@ -33,6 +34,10 @@ dependencies {
 	// Database
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	testRuntimeOnly 'com.h2database:h2'
+	
+	// MySQL Master-Slave support
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'com.zaxxer:HikariCP'
 	
 	// Liquibase
 	implementation 'org.liquibase:liquibase-core'

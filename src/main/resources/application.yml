@@ -4,16 +4,33 @@ spring:
   application:
     name: millions-transaction
   datasource:
-    url: jdbc:mysql://localhost:3306/millions_transaction
-    username: root
-    password: FormosVN@123
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    hikari:
-      maximum-pool-size: 80
-      minimum-idle: 20
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+    # Master database configuration
+    master:
+      jdbc-url: jdbc:mysql://localhost:3307/millions_transaction
+      username: root
+      password: FormosVN@123
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        maximum-pool-size: 40
+        minimum-idle: 10
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: MasterHikariCP
+
+    # Slave database configuration
+    slave:
+      jdbc-url: jdbc:mysql://localhost:3308/millions_transaction
+      username: root
+      password: FormosVN@123
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        maximum-pool-size: 40
+        minimum-idle: 10
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: SlaveHikariCP
   jpa:
     hibernate:
       ddl-auto: validate
@@ -22,6 +39,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
+        # Sử dụng routing datasource
+        connection:
+          provider_disables_autocommit: true
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
     enabled: true

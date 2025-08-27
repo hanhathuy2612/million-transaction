@@ -1,0 +1,84 @@
+version: "3.8"
+
+services:
+  mysql-master:
+    image: mysql:8.0
+    container_name: mysql-master
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: FormosVN@123
+      MYSQL_DATABASE: millions_transaction
+      MYSQL_USER: millions_user
+      MYSQL_PASSWORD: millions_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_master_data:/var/lib/mysql
+      - ./mysql-master.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+    networks: [mysql-network]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+
+  mysql-slave:
+    image: mysql:8.0
+    container_name: mysql-slave
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: FormosVN@123
+      # Don't create database/users on slave - they will be replicated from master
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_slave_data:/var/lib/mysql
+      - ./mysql-slave.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+    networks: [mysql-network]
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    ports:
+      - "8089:8080"
+    networks: [mysql-network]
+    depends_on:
+      - mysql-master
+      - mysql-slave
+
+volumes:
+  mysql_master_data:
+  mysql_slave_data:
+
+networks:
+  mysql-network:
+    driver: bridge

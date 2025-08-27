@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Million Transactions Docker Services Startup Script
+# MySQL Master-Slave Replication Docker Services Startup Script
 
-echo "🚀 Starting Million Transactions Docker Services..."
+echo "🚀 Starting MySQL Master-Slave Replication Docker Services..."
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then

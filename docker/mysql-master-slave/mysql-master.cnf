@@ -1,0 +1,30 @@
+[mysqld]
+# Identity
+server-id = 1
+
+# Binary log + GTID cho replication
+log-bin = mysql-bin
+binlog_format = ROW
+binlog_row_image = FULL
+gtid_mode = ON
+enforce_gtid_consistency = ON
+
+# (Optional) Relay log cho slave
+log_slave_updates = ON
+
+# Performance
+innodb_flush_log_at_trx_commit = 2
+
+# Connection
+max_connections = 200
+max_connect_errors = 1000
+
+# Charset
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+# Timezone
+default-time-zone = '+07:00'
+
+# External
+bind-address = 0.0.0.0

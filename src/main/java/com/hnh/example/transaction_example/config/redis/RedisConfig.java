@@ -1,4 +1,4 @@
-package com.hnh.example.transaction_example.config;
+package com.hnh.example.transaction_example.config.redis;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
