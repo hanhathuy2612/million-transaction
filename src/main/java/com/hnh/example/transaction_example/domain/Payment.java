@@ -82,6 +82,12 @@ public class Payment {
     @Column(name = "failure_reason")
     private String failureReason;
 
+    @Column(name = "processor_transaction_id")
+    private String processorTransactionId;
+
+    @Column(name = "processor_name")
+    private String processorName;
+
     public enum PaymentStatus {
         PENDING,
         AUTHORIZED,

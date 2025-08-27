@@ -8,6 +8,8 @@ import com.hnh.example.transaction_example.dto.PaymentResponse;
 import com.hnh.example.transaction_example.dto.RefundRequest;
 import com.hnh.example.transaction_example.repository.PaymentLedgerRepository;
 import com.hnh.example.transaction_example.repository.PaymentRepository;
+import com.hnh.example.transaction_example.service.PaymentProcessorService;
+import com.hnh.example.transaction_example.dto.PaymentAuthorizationResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,6 +32,7 @@ public class PaymentService {
     private final PaymentLedgerRepository paymentLedgerRepository;
     private final OutboxService outboxService;
     private final IdempotencyService idempotencyService;
+    private final PaymentProcessorService paymentProcessorService;
 
     /**
      * Create a new payment with idempotency support
@@ -80,13 +83,14 @@ public class PaymentService {
             // Save payment
             payment = paymentRepository.save(payment);
 
-            // Simulate payment authorization (in real system, this would call payment
-            // processor)
-            boolean authorizationSuccess = simulatePaymentAuthorization(payment);
+            // Call real payment processor for authorization
+            PaymentAuthorizationResult authResult = paymentProcessorService.authorizePayment(payment, request);
 
-            if (authorizationSuccess) {
+            if (authResult.isSuccess()) {
                 payment.setStatus(Payment.PaymentStatus.AUTHORIZED);
-                payment.setAuthorizedAt(LocalDateTime.now());
+                payment.setAuthorizedAt(authResult.getAuthorizedAt());
+                payment.setProcessorTransactionId(authResult.getProcessorTransactionId());
+                payment.setProcessorName(authResult.getProcessorName());
                 payment = paymentRepository.save(payment);
 
                 // Create ledger entry
@@ -97,18 +101,23 @@ public class PaymentService {
                 // Publish event via outbox pattern
                 outboxService.publishPaymentAuthorized(payment);
 
-                log.info("Payment {} authorized successfully", payment.getId());
+                log.info("Payment {} authorized successfully with {} (Transaction ID: {})", 
+                        payment.getId(), authResult.getProcessorName(), authResult.getProcessorTransactionId());
                 return ResponseEntity.status(HttpStatus.CREATED).body(toPaymentResponse(payment));
             } else {
                 payment.setStatus(Payment.PaymentStatus.FAILED);
                 payment.setFailedAt(LocalDateTime.now());
-                payment.setFailureReason("Authorization failed");
+                payment.setFailureReason(authResult.getFailureReason());
+                payment.setProcessorTransactionId(authResult.getProcessorTransactionId());
+                payment.setProcessorName(authResult.getProcessorName());
                 payment = paymentRepository.save(payment);
 
                 // Publish failure event
-                outboxService.publishPaymentFailed(payment, "Authorization failed");
+                outboxService.publishPaymentFailed(payment, authResult.getFailureReason());
 
-                log.warn("Payment {} authorization failed", payment.getId());
+                log.warn("Payment {} authorization failed with {}: {} (Code: {})", 
+                        payment.getId(), authResult.getProcessorName(), 
+                        authResult.getFailureReason(), authResult.getFailureCode());
                 return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(toPaymentResponse(payment));
             }
 
@@ -282,11 +291,6 @@ public class PaymentService {
         }
     }
 
-    private boolean simulatePaymentAuthorization(Payment payment) {
-        // Simulate 95% success rate
-        return Math.random() > 0.05;
-    }
-
     private PaymentResponse toPaymentResponse(Payment payment) {
         return PaymentResponse.builder()
                 .id(payment.getId())
@@ -305,6 +309,8 @@ public class PaymentService {
                 .capturedAt(payment.getCapturedAt())
                 .failedAt(payment.getFailedAt())
                 .failureReason(payment.getFailureReason())
+                .processorTransactionId(payment.getProcessorTransactionId())
+                .processorName(payment.getProcessorName())
                 .build();
     }
 }

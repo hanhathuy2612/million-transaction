@@ -33,6 +33,8 @@ public class PaymentResponse {
     private LocalDateTime capturedAt;
     private LocalDateTime failedAt;
     private String failureReason;
+    private String processorTransactionId;
+    private String processorName;
 
     // Helper methods for API responses
     public BigDecimal getRefundableAmount() {

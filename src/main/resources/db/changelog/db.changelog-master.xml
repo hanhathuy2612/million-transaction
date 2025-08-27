@@ -10,4 +10,5 @@
     <include file="db/changelog/004-create-idempotency-keys-table.xml"/>
     <include file="db/changelog/005-create-indexes.xml"/>
     <include file="db/changelog/006-create-user-and-authority.xml"/>
+    <include file="db/changelog/007-add-processor-fields.xml"/>
 </databaseChangeLog>

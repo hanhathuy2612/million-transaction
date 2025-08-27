@@ -76,12 +76,16 @@ management:
 # Logging configuration
 logging:
   level:
-    com.hnh.example.transaction_example: DEBUG
+    com.hnh.example.transaction_example: INFO
     org.springframework.kafka: INFO
     org.springframework.data.redis: INFO
-    org.springdoc: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    org.springdoc: INFO
+
+# Payment processor configuration
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:sk_test_your_test_key_here}
+  currency: usd
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_your_webhook_secret_here}
 
 # =========================
 # Springdoc / Swagger-UI

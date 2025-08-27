@@ -51,6 +51,9 @@ dependencies {
 	// Kafka
 	implementation 'org.springframework.kafka:spring-kafka'
 	
+	// Stripe Payment Processor
+	implementation 'com.stripe:stripe-java:24.0.0'
+	
 	// Swagger/OpenAPI
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.11'
 	
