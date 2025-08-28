@@ -5,7 +5,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -38,15 +37,6 @@ public class WebhookService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final WebhookRepository webhookRepository;
     private final WebhookMapper webhookMapper;
-
-    // In production, these would come from merchant configuration
-    private static final Map<String, String> MERCHANT_WEBHOOK_URLS = Map.of(
-            "merchant_1", "https://merchant1.example.com/webhooks/payments",
-            "merchant_2", "https://merchant2.example.com/webhooks/payments");
-
-    private static final Map<String, String> MERCHANT_WEBHOOK_SECRETS = Map.of(
-            "merchant_1", "webhook_secret_1",
-            "merchant_2", "webhook_secret_2");
 
     public WebhookResponse createWebhook(CreateWebhookRequest request) {
         Webhook webhook = webhookMapper.toEntity(request);
