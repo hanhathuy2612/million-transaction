@@ -1,5 +1,14 @@
 package com.hnh.example.transaction_example.service.payment;
 
+import static com.hnh.example.transaction_example.constant.KafkaConstant.PAYMENT_EVENTS_GROUP_ID;
+import static com.hnh.example.transaction_example.constant.KafkaConstant.PAYMENT_EVENTS_GROUP_ID_READ_MODEL;
+import static com.hnh.example.transaction_example.constant.KafkaConstant.PAYMENT_EVENTS_TOPIC;
+import static com.hnh.example.transaction_example.constant.PaymentEvent.EVENT_TYPE_AUTHORIZED;
+import static com.hnh.example.transaction_example.constant.PaymentEvent.EVENT_TYPE_CAPTURED;
+import static com.hnh.example.transaction_example.constant.PaymentEvent.EVENT_TYPE_FAILED;
+import static com.hnh.example.transaction_example.constant.PaymentEvent.EVENT_TYPE_PENDING;
+import static com.hnh.example.transaction_example.constant.PaymentEvent.EVENT_TYPE_REFUNDED;
+
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -27,7 +36,7 @@ public class PaymentEventConsumer {
     /**
      * Consumer for payment events to trigger webhooks and analytics
      */
-    @KafkaListener(topics = "payments.events.v1", groupId = "webhook-processor", containerFactory = "kafkaListenerContainerFactory")
+    @KafkaListener(topics = PAYMENT_EVENTS_TOPIC, groupId = PAYMENT_EVENTS_GROUP_ID, containerFactory = "kafkaListenerContainerFactory")
     public void handlePaymentEvent(
             @Payload String eventPayload,
             @Header(KafkaHeaders.RECEIVED_KEY) String paymentId,
@@ -66,7 +75,7 @@ public class PaymentEventConsumer {
     /**
      * Consumer for payment events to update read models
      */
-    @KafkaListener(topics = "payments.events.v1", groupId = "read-model-projector", containerFactory = "kafkaListenerContainerFactory")
+    @KafkaListener(topics = PAYMENT_EVENTS_TOPIC, groupId = PAYMENT_EVENTS_GROUP_ID_READ_MODEL, containerFactory = "kafkaListenerContainerFactory")
     public void projectToReadModel(
             @Payload String eventPayload,
             @Header(KafkaHeaders.RECEIVED_KEY) String paymentId,
@@ -78,19 +87,19 @@ public class PaymentEventConsumer {
 
             // Update search indexes, dashboards, etc.
             switch (eventType) {
-                case "payment.pending":
+                case EVENT_TYPE_PENDING:
                     updateProcessingRequested(eventData);
                     break;
-                case "payment.authorized":
+                case EVENT_TYPE_AUTHORIZED:
                     updatePaymentSearchIndex(eventData);
                     break;
-                case "payment.captured":
+                case EVENT_TYPE_CAPTURED:
                     updateRevenueProjections(eventData);
                     break;
-                case "payment.refunded":
+                case EVENT_TYPE_REFUNDED:
                     updateRefundMetrics(eventData);
                     break;
-                case "payment.failed":
+                case EVENT_TYPE_FAILED:
                     updateFailureMetrics(eventData);
                     break;
                 default:

@@ -19,6 +19,8 @@ import com.hnh.example.transaction_example.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import static com.hnh.example.transaction_example.constant.PaymentEvent.*;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -26,13 +28,6 @@ public class AnalyticsService {
 
     private final PaymentRepository paymentRepository;
     private final RedisTemplate<String, Object> redisTemplate;
-
-    // Constants
-    private static final String EVENT_TYPE_AUTHORIZED = "payment.authorized";
-    private static final String EVENT_TYPE_CAPTURED = "payment.captured";
-    private static final String EVENT_TYPE_REFUNDED = "payment.refunded";
-    private static final String EVENT_TYPE_FAILED = "payment.failed";
-    private static final String EVENT_TYPE_PENDING = "payment.pending";
 
     private static final String CACHE_KEY_PREFIX = "analytics:";
     private static final long CACHE_TTL_MINUTES = 15;

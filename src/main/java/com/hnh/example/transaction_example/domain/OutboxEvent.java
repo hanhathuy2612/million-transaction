@@ -111,7 +111,7 @@ public class OutboxEvent {
     }
 
     @Getter
-    public static enum EventType {
+    public enum EventType {
         PAYMENT_AUTHORIZED("payment.authorized"),
         PAYMENT_CAPTURED("payment.captured"),
         PAYMENT_REFUNDED("payment.refunded"),
