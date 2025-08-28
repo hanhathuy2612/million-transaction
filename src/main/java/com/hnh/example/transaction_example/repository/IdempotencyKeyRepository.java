@@ -22,7 +22,7 @@ public interface IdempotencyKeyRepository extends JpaRepository<IdempotencyKey, 
     // Cleanup expired keys (housekeeping job)
     @Modifying
     @Query("DELETE FROM IdempotencyKey i WHERE i.expiresAt < :cutoffDate")
-    void deleteExpiredKeys(@Param("cutoffDate") LocalDateTime cutoffDate);
+    int deleteExpiredKeys(@Param("cutoffDate") LocalDateTime cutoffDate);
 
     // Count active keys per merchant (for monitoring/rate limiting)
     @Query("SELECT COUNT(i) FROM IdempotencyKey i WHERE i.merchantId = :merchantId AND i.expiresAt > :now")
@@ -34,4 +34,6 @@ public interface IdempotencyKeyRepository extends JpaRepository<IdempotencyKey, 
             @Param("merchantId") String merchantId, 
             @Param("since") LocalDateTime since
     );
+
+    Long countByMerchantId(String merchantId);
 }
