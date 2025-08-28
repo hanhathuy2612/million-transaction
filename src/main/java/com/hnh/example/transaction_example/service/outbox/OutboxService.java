@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hnh.example.transaction_example.domain.OutboxEvent;
@@ -43,7 +42,7 @@ public class OutboxService {
     /**
      * Create outbox event for payment capture
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void publishPaymentCaptured(Payment payment, BigDecimal capturedAmount) {
         PaymentCapturedPayload payload = OutboxPayloadUtil.createCapturedPayload(payment, capturedAmount);
 
@@ -55,7 +54,7 @@ public class OutboxService {
     /**
      * Create outbox event for payment refund
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void publishPaymentRefunded(Payment payment, BigDecimal refundedAmount) {
         PaymentRefundedPayload payload = OutboxPayloadUtil.createRefundedPayload(payment, refundedAmount);
 
@@ -67,7 +66,7 @@ public class OutboxService {
     /**
      * Create outbox event for payment failure
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void publishPaymentFailed(Payment payment, String failureReason) {
         PaymentFailedPayload payload = OutboxPayloadUtil.createFailedPayload(payment, failureReason);
 

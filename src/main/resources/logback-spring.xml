@@ -6,15 +6,9 @@
     <!-- Console Appender with custom colors -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%d{HH:mm:ss.SSS} %red(%-5level) [%15.15t] %cyan(%-40.40logger{39}) : %msg%n%wEx</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%15.15t] %cyan(%-40.40logger{39}) : %msg%n%wEx</pattern>
         </encoder>
     </appender>
-
-    <!-- Custom color mapping -->
-    <conversionRule conversionWord="level"
-        converterClass="ch.qos.logback.classic.pattern.LevelPatternConverter">
-        <pattern>%highlight(%-5level)</pattern>
-    </conversionRule>
 
     <!-- Simple logger configuration -->
     <logger name="com.hnh.example.transaction_example" level="DEBUG" />

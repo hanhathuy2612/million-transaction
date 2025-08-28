@@ -1,7 +1,5 @@
 package com.hnh.example.transaction_example.service.payment;
 
-import com.hnh.example.transaction_example.service.AnalyticsService;
-import com.hnh.example.transaction_example.service.WebhookService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -11,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hnh.example.transaction_example.service.AnalyticsService;
+import com.hnh.example.transaction_example.service.WebhookService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -78,20 +78,20 @@ public class PaymentEventConsumer {
 
             // Update search indexes, dashboards, etc.
             switch (eventType) {
-                case "authorized":
+                case "payment.pending":
+                    updateProcessingRequested(eventData);
+                    break;
+                case "payment.authorized":
                     updatePaymentSearchIndex(eventData);
                     break;
-                case "captured":
+                case "payment.captured":
                     updateRevenueProjections(eventData);
                     break;
-                case "refunded":
+                case "payment.refunded":
                     updateRefundMetrics(eventData);
                     break;
-                case "failed":
+                case "payment.failed":
                     updateFailureMetrics(eventData);
-                    break;
-                case "processing_requested":
-                    updateProcessingRequested(eventData);
                     break;
                 default:
                     log.warn("Unknown event type: {}", eventType);

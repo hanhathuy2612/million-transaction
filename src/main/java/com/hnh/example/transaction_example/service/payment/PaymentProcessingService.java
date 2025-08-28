@@ -53,7 +53,7 @@ public class PaymentProcessingService {
         payment = paymentRepository.save(payment);
 
         // Publish event via outbox pattern
-        outboxService.publishPendingPayment(payment.getId(), request);
+        outboxService.publishPendingPayment(payment);
 
         log.info("Payment {} created and queued for processing", payment.getId());
         return paymentMapper.toPaymentResponse(payment);

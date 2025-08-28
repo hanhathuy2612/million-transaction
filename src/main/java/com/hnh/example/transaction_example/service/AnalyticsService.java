@@ -28,10 +28,11 @@ public class AnalyticsService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     // Constants
-    private static final String EVENT_TYPE_AUTHORIZED = "authorized";
-    private static final String EVENT_TYPE_CAPTURED = "captured";
-    private static final String EVENT_TYPE_REFUNDED = "refunded";
-    private static final String EVENT_TYPE_FAILED = "failed";
+    private static final String EVENT_TYPE_AUTHORIZED = "payment.authorized";
+    private static final String EVENT_TYPE_CAPTURED = "payment.captured";
+    private static final String EVENT_TYPE_REFUNDED = "payment.refunded";
+    private static final String EVENT_TYPE_FAILED = "payment.failed";
+    private static final String EVENT_TYPE_PENDING = "payment.pending";
 
     private static final String CACHE_KEY_PREFIX = "analytics:";
     private static final long CACHE_TTL_MINUTES = 15;
@@ -77,6 +78,9 @@ public class AnalyticsService {
                     break;
                 case EVENT_TYPE_FAILED:
                     recordPaymentFailed(merchantId, currency, amount);
+                    break;
+                case EVENT_TYPE_PENDING:
+                    recordPaymentEvent(eventType, eventData);
                     break;
                 default:
                     log.warn("Unknown event type for analytics: {}", eventType);
