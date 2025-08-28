@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hnh.example.transaction_example.service.AnalyticsService;
-import com.hnh.example.transaction_example.service.OutboxRelayService;
+import com.hnh.example.transaction_example.service.outbox.OutboxRelayService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

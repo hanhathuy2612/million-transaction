@@ -1,9 +1,8 @@
-package com.hnh.example.transaction_example.service;
+package com.hnh.example.transaction_example.service.outbox;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -12,6 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.hnh.example.transaction_example.domain.OutboxEvent;
 import com.hnh.example.transaction_example.domain.Payment;
 import com.hnh.example.transaction_example.repository.OutboxEventRepository;
+import com.hnh.example.transaction_example.service.outbox.payload.PaymentCapturedPayload;
+import com.hnh.example.transaction_example.service.outbox.payload.PaymentEventPayload;
+import com.hnh.example.transaction_example.service.outbox.payload.PaymentFailedPayload;
+import com.hnh.example.transaction_example.service.outbox.payload.PaymentRefundedPayload;
 import com.hnh.example.transaction_example.util.JsonUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +33,8 @@ public class OutboxService {
      */
     @Transactional
     public void publishPaymentAuthorized(Payment payment) {
-        Map<String, Object> payload = createPaymentEventPayload(payment, "authorized");
+        PaymentEventPayload payload = OutboxPayloadUtil.createPaymentEventPayload(payment,
+                OutboxEvent.EventType.PAYMENT_AUTHORIZED);
         OutboxEvent event = OutboxEvent.paymentAuthorized(payment.getId(), serializePayload(payload));
         outboxEventRepository.save(event);
         log.debug("Created outbox event for payment.authorized: {}", payment.getId());
@@ -40,9 +44,8 @@ public class OutboxService {
      * Create outbox event for payment capture
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void publishPaymentCaptured(Payment payment, java.math.BigDecimal capturedAmount) {
-        Map<String, Object> payload = createPaymentEventPayload(payment, "captured");
-        payload.put("capturedAmount", capturedAmount);
+    public void publishPaymentCaptured(Payment payment, BigDecimal capturedAmount) {
+        PaymentCapturedPayload payload = OutboxPayloadUtil.createCapturedPayload(payment, capturedAmount);
 
         OutboxEvent event = OutboxEvent.paymentCaptured(payment.getId(), serializePayload(payload));
         outboxEventRepository.save(event);
@@ -53,10 +56,8 @@ public class OutboxService {
      * Create outbox event for payment refund
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void publishPaymentRefunded(Payment payment, java.math.BigDecimal refundedAmount) {
-        Map<String, Object> payload = createPaymentEventPayload(payment, "refunded");
-        payload.put("refundedAmount", refundedAmount);
-        payload.put("totalRefundedAmount", payment.getRefundedAmount());
+    public void publishPaymentRefunded(Payment payment, BigDecimal refundedAmount) {
+        PaymentRefundedPayload payload = OutboxPayloadUtil.createRefundedPayload(payment, refundedAmount);
 
         OutboxEvent event = OutboxEvent.paymentRefunded(payment.getId(), serializePayload(payload));
         outboxEventRepository.save(event);
@@ -68,8 +69,7 @@ public class OutboxService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publishPaymentFailed(Payment payment, String failureReason) {
-        Map<String, Object> payload = createPaymentEventPayload(payment, "failed");
-        payload.put("failureReason", failureReason);
+        PaymentFailedPayload payload = OutboxPayloadUtil.createFailedPayload(payment, failureReason);
 
         OutboxEvent event = OutboxEvent.paymentFailed(payment.getId(), serializePayload(payload));
         outboxEventRepository.save(event);
@@ -110,21 +110,20 @@ public class OutboxService {
         log.info("Cleaned up old outbox events before: {}", cutoffDate);
     }
 
-    private Map<String, Object> createPaymentEventPayload(Payment payment, String eventType) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("paymentId", payment.getId().toString());
-        payload.put("merchantId", payment.getMerchantId());
-        payload.put("amount", payment.getAmount());
-        payload.put("currency", payment.getCurrency());
-        payload.put("status", payment.getStatus().toString());
-        payload.put("eventType", eventType);
-        payload.put("timestamp", LocalDateTime.now().toString());
-        payload.put("referenceId", payment.getReferenceId() != null ? payment.getReferenceId() : "");
-        payload.put("paymentMethodId", payment.getPaymentMethodId());
-        return payload;
+    /**
+     * Create outbox event for payment processing request
+     * Must be called within the same transaction as payment creation
+     */
+    @Transactional
+    public void publishPendingPayment(Payment payment) {
+        PaymentEventPayload payload = OutboxPayloadUtil.createPaymentEventPayload(payment,
+                OutboxEvent.EventType.PAYMENT_PENDING);
+        OutboxEvent event = OutboxEvent.paymentPending(payment.getId(), serializePayload(payload));
+        outboxEventRepository.save(event);
+        log.debug("Created outbox event for payment.created: {}", payment.getId());
     }
 
-    private String serializePayload(Map<String, Object> payload) {
+    private String serializePayload(PaymentEventPayload payload) {
         try {
             return JsonUtil.toJson(payload);
         } catch (Exception e) {

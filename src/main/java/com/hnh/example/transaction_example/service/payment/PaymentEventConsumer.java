@@ -1,5 +1,7 @@
-package com.hnh.example.transaction_example.service;
+package com.hnh.example.transaction_example.service.payment;
 
+import com.hnh.example.transaction_example.service.AnalyticsService;
+import com.hnh.example.transaction_example.service.WebhookService;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -88,6 +90,9 @@ public class PaymentEventConsumer {
                 case "failed":
                     updateFailureMetrics(eventData);
                     break;
+                case "processing_requested":
+                    updateProcessingRequested(eventData);
+                    break;
                 default:
                     log.warn("Unknown event type: {}", eventType);
             }
@@ -97,6 +102,11 @@ public class PaymentEventConsumer {
         } catch (Exception e) {
             log.error("Error projecting to read model for payment: {}", paymentId, e);
         }
+    }
+
+    private void updateProcessingRequested(JsonNode eventData) {
+        // Update processing requested metrics
+        log.debug("Updating processing requested metrics for payment: {}", eventData.get("paymentId").asText());
     }
 
     private void updatePaymentSearchIndex(JsonNode eventData) {

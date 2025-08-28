@@ -1,4 +1,12 @@
-package com.hnh.example.transaction_example.service;
+package com.hnh.example.transaction_example.service.payment;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import com.hnh.example.transaction_example.domain.Payment;
 import com.hnh.example.transaction_example.dto.PaymentAuthorizationResult;
@@ -12,14 +20,8 @@ import com.stripe.model.Refund;
 import com.stripe.param.PaymentIntentCaptureParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.RefundCreateParams;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Stripe implementation of PaymentProcessorService
@@ -27,17 +29,20 @@ import java.util.Map;
 @Slf4j
 @Service
 public class StripePaymentProcessorService implements PaymentProcessorService {
-    
+
     @Value("${stripe.secret-key}")
     private String stripeSecretKey;
-    
+
     @Value("${stripe.currency:usd}")
     private String defaultCurrency;
-    
+
+    private static final String SUCCESS_STATUS = "succeeded";
+    private static final String FAILED_STATUS = "failed";
+
     public StripePaymentProcessorService(@Value("${stripe.secret-key}") String stripeSecretKey) {
         Stripe.apiKey = stripeSecretKey;
     }
-    
+
     @Override
     public PaymentAuthorizationResult simulatePayment(Payment payment, PaymentRequest request) {
         log.info("Simulating payment {} with Stripe", payment.getId());
@@ -47,21 +52,20 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                 .processorTransactionId("simulated-transaction-id")
                 .authorizedAmount(payment.getAmount())
                 .currency(payment.getCurrency())
-                
                 .processorName("Stripe")
                 .processorResponse("succeeded")
                 .processorStatus("succeeded")
                 .build();
     }
-    
+
     @Override
     public PaymentAuthorizationResult authorizePayment(Payment payment, PaymentRequest request) {
         try {
             log.info("Authorizing payment {} with Stripe", payment.getId());
-            
+
             // Convert amount to cents (Stripe uses smallest currency unit)
             long amountInCents = payment.getAmount().multiply(BigDecimal.valueOf(100)).longValue();
-            
+
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(amountInCents)
                     .setCurrency(payment.getCurrency().toLowerCase())
@@ -69,10 +73,10 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                     .setConfirm(true)
                     .setDescription(request.getDescription())
                     .build();
-            
+
             PaymentIntent paymentIntent = PaymentIntent.create(params);
-            
-            if ("succeeded".equals(paymentIntent.getStatus())) {
+
+            if (SUCCESS_STATUS.equals(paymentIntent.getStatus())) {
                 log.info("Payment {} authorized successfully with Stripe", payment.getId());
                 return PaymentAuthorizationResult.builder()
                         .success(true)
@@ -91,14 +95,15 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                         .success(false)
                         .processorTransactionId(paymentIntent.getId())
                         .failureReason("Payment authorization failed: " + paymentIntent.getStatus())
-                        .failureCode(paymentIntent.getLastPaymentError() != null ?
-                                paymentIntent.getLastPaymentError().getCode() : "unknown")
+                        .failureCode(paymentIntent.getLastPaymentError() != null
+                                ? paymentIntent.getLastPaymentError().getCode()
+                                : "unknown")
                         .processorName("Stripe")
                         .processorResponse(paymentIntent.getStatus())
                         .processorStatus(paymentIntent.getStatus())
                         .build();
             }
-            
+
         } catch (StripeException e) {
             log.error("Stripe authorization error for payment {}: {}", payment.getId(), e.getMessage(), e);
             return PaymentAuthorizationResult.builder()
@@ -119,23 +124,23 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                     .build();
         }
     }
-    
+
     @Override
     public PaymentCaptureResult capturePayment(Payment payment, BigDecimal amount) {
         try {
             log.info("Capturing payment {} with Stripe, amount: {}", payment.getId(), amount);
-            
+
             // Convert amount to cents
             long amountInCents = amount.multiply(BigDecimal.valueOf(100)).longValue();
-            
+
             PaymentIntentCaptureParams params = PaymentIntentCaptureParams.builder()
                     .setAmountToCapture(amountInCents)
                     .build();
-            
+
             PaymentIntent paymentIntent = PaymentIntent.retrieve(payment.getProcessorTransactionId());
             PaymentIntent capturedIntent = paymentIntent.capture(params);
-            
-            if ("succeeded".equals(capturedIntent.getStatus())) {
+
+            if (SUCCESS_STATUS.equals(capturedIntent.getStatus())) {
                 log.info("Payment {} captured successfully with Stripe", payment.getId());
                 return PaymentCaptureResult.builder()
                         .success(true)
@@ -159,7 +164,7 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                         .processorStatus(capturedIntent.getStatus())
                         .build();
             }
-            
+
         } catch (StripeException e) {
             log.error("Stripe capture error for payment {}: {}", payment.getId(), e.getMessage(), e);
             return PaymentCaptureResult.builder()
@@ -180,24 +185,24 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                     .build();
         }
     }
-    
+
     @Override
     public PaymentRefundResult refundPayment(Payment payment, BigDecimal amount) {
         try {
             log.info("Refunding payment {} with Stripe, amount: {}", payment.getId(), amount);
-            
+
             // Convert amount to cents
             long amountInCents = amount.multiply(BigDecimal.valueOf(100)).longValue();
-            
+
             RefundCreateParams params = RefundCreateParams.builder()
                     .setPaymentIntent(payment.getProcessorTransactionId())
                     .setAmount(amountInCents)
                     .setMetadata(createMetadata(payment))
                     .build();
-            
+
             Refund refund = Refund.create(params);
-            
-            if ("succeeded".equals(refund.getStatus())) {
+
+            if (SUCCESS_STATUS.equals(refund.getStatus())) {
                 log.info("Payment {} refunded successfully with Stripe", payment.getId());
                 return PaymentRefundResult.builder()
                         .success(true)
@@ -221,7 +226,7 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                         .processorStatus(refund.getStatus())
                         .build();
             }
-            
+
         } catch (StripeException e) {
             log.error("Stripe refund error for payment {}: {}", payment.getId(), e.getMessage(), e);
             return PaymentRefundResult.builder()
@@ -242,7 +247,7 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
                     .build();
         }
     }
-    
+
     private Map<String, String> createMetadata(Payment payment) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("payment_id", payment.getId().toString());

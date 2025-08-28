@@ -1,4 +1,4 @@
-package com.hnh.example.transaction_example.service;
+package com.hnh.example.transaction_example.service.outbox;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

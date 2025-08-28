@@ -1,4 +1,4 @@
-package com.hnh.example.transaction_example.service;
+package com.hnh.example.transaction_example.service.payment;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,21 +15,23 @@ import org.springframework.transaction.annotation.Transactional;
 import com.hnh.example.transaction_example.domain.Payment;
 import com.hnh.example.transaction_example.domain.PaymentLedger;
 import com.hnh.example.transaction_example.dto.CaptureRequest;
-import com.hnh.example.transaction_example.dto.PaymentAuthorizationResult;
 import com.hnh.example.transaction_example.dto.PaymentRequest;
 import com.hnh.example.transaction_example.dto.PaymentResponse;
 import com.hnh.example.transaction_example.dto.RefundRequest;
 import com.hnh.example.transaction_example.mapper.PaymentMapper;
 import com.hnh.example.transaction_example.repository.PaymentLedgerRepository;
 import com.hnh.example.transaction_example.repository.PaymentRepository;
+import com.hnh.example.transaction_example.service.IdempotencyService;
+import com.hnh.example.transaction_example.service.outbox.OutboxService;
+import com.hnh.example.transaction_example.service.payment.queue.PaymentQueueService;
 import com.hnh.example.transaction_example.util.JsonUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class PaymentService {
 
     // Repositories
@@ -39,9 +41,11 @@ public class PaymentService {
     // Services
     private final OutboxService outboxService;
     private final IdempotencyService idempotencyService;
+    private final PaymentGuardService paymentGuardService;
+    private final PaymentQueueService queueService;
 
     // Processors
-    private final PaymentProcessorService paymentProcessorService;
+    private final PaymentProcessingService processingService;
 
     // Mappers
     private final PaymentMapper paymentMapper;
@@ -49,7 +53,6 @@ public class PaymentService {
     /**
      * Create a new payment with idempotency support
      */
-    @Transactional
     public ResponseEntity<PaymentResponse> createPayment(String merchantId, String idempotencyKey,
             PaymentRequest request) {
         // Check for idempotent request
@@ -61,8 +64,12 @@ public class PaymentService {
             return ResponseEntity.ok(JsonUtil.fromJson(responseBody, PaymentResponse.class));
         }
 
-        // Create new payment
-        PaymentResponse response = createNewPayment(request);
+        // Phase 1: Create payment
+        PaymentResponse response = paymentGuardService
+                .guardWrite(() -> processingService.createNewPaymentPhase1(request));
+
+        // Phase 2: Enqueue for async processing
+        queueService.enqueuePayment(response.getId(), request);
 
         // Store idempotent response
         if (idempotencyKey != null && !idempotencyKey.trim().isEmpty()) {
@@ -71,71 +78,6 @@ public class PaymentService {
         }
 
         return ResponseEntity.ok(response);
-    }
-
-    protected PaymentResponse createNewPayment(PaymentRequest request) {
-        try {
-            // Validate business rules
-            validatePaymentRequest(request);
-
-            // Create payment entity
-            Payment payment = Payment.builder()
-                    .merchantId(request.getMerchantId())
-                    .amount(request.getAmount())
-                    .currency(request.getCurrency())
-                    .status(Payment.PaymentStatus.PENDING)
-                    .paymentMethodId(request.getPaymentMethodId())
-                    .description(request.getDescription())
-                    .referenceId(request.getReferenceId())
-                    .capturedAmount(BigDecimal.ZERO)
-                    .refundedAmount(BigDecimal.ZERO)
-                    .build();
-
-            // Save payment
-            payment = paymentRepository.save(payment);
-
-            // Call real payment processor for authorization
-            PaymentAuthorizationResult authResult = paymentProcessorService.simulatePayment(payment, request);
-
-            if (authResult.isSuccess()) {
-                payment.setStatus(Payment.PaymentStatus.AUTHORIZED);
-                payment.setAuthorizedAt(authResult.getAuthorizedAt());
-                payment.setProcessorTransactionId(authResult.getProcessorTransactionId());
-                payment.setProcessorName(authResult.getProcessorName());
-                payment = paymentRepository.save(payment);
-
-                // Create ledger entry
-                PaymentLedger ledgerEntry = PaymentLedger.createAuthorizationEntry(payment.getId(),
-                        payment.getAmount());
-                paymentLedgerRepository.save(ledgerEntry);
-
-                // Publish event via outbox pattern
-                outboxService.publishPaymentAuthorized(payment);
-
-                log.info("Payment {} authorized successfully with {} (Transaction ID: {})",
-                        payment.getId(), authResult.getProcessorName(), authResult.getProcessorTransactionId());
-                return paymentMapper.toPaymentResponse(payment);
-            } else {
-                payment.setStatus(Payment.PaymentStatus.FAILED);
-                payment.setFailedAt(LocalDateTime.now());
-                payment.setFailureReason(authResult.getFailureReason());
-                payment.setProcessorTransactionId(authResult.getProcessorTransactionId());
-                payment.setProcessorName(authResult.getProcessorName());
-                payment = paymentRepository.save(payment);
-
-                // Publish failure event
-                outboxService.publishPaymentFailed(payment, authResult.getFailureReason());
-
-                log.warn("Payment {} authorization failed with {}: {} (Code: {})",
-                        payment.getId(), authResult.getProcessorName(),
-                        authResult.getFailureReason(), authResult.getFailureCode());
-                return paymentMapper.toPaymentResponse(payment);
-            }
-
-        } catch (Exception e) {
-            log.error("Error creating payment", e);
-            throw new RuntimeException("Payment creation failed", e);
-        }
     }
 
     /**
@@ -279,15 +221,5 @@ public class PaymentService {
     public Page<PaymentResponse> listPayments(String merchantId, Pageable pageable) {
         Page<Payment> payments = paymentRepository.findByMerchantId(merchantId, pageable);
         return payments.map(paymentMapper::toPaymentResponse);
-    }
-
-    private void validatePaymentRequest(PaymentRequest request) {
-        if (!request.isSupportedCurrency()) {
-            throw new IllegalArgumentException("Unsupported currency: " + request.getCurrency());
-        }
-
-        if (!request.hasValidPrecision()) {
-            throw new IllegalArgumentException("Invalid amount precision for currency: " + request.getCurrency());
-        }
     }
 }

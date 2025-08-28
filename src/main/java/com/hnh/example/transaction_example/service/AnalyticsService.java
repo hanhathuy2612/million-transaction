@@ -126,9 +126,6 @@ public class AnalyticsService {
      * Get payment metrics for a merchant
      */
     public PaymentMetrics getPaymentMetrics(String merchantId, LocalDateTime from, LocalDateTime to) {
-        // In production, this would query your analytics database
-        // For now, return mock data
-
         return PaymentMetrics.builder()
                 .merchantId(merchantId)
                 .periodStart(from)
@@ -188,35 +185,19 @@ public class AnalyticsService {
     }
 
     private void recordPaymentAuthorized(String merchantId, String currency, BigDecimal amount) {
-        // In production, this would send metrics to your monitoring system
-        // Examples: Prometheus, DataDog, CloudWatch, etc.
-
         log.info(METRIC_LOG_FORMAT, EVENT_TYPE_AUTHORIZED, merchantId, currency, amount, getCurrentTimestamp());
-
-        // Example metric recording (pseudocode):
-        // meterRegistry.counter("payments.authorized.count",
-        // Tags.of("merchant", merchantId, "currency", currency)).increment();
-        // meterRegistry.gauge("payments.authorized.amount",
-        // Tags.of("merchant", merchantId, "currency", currency), amount.doubleValue());
     }
 
     private void recordPaymentCaptured(String merchantId, String currency, BigDecimal amount) {
         log.info(METRIC_LOG_FORMAT, EVENT_TYPE_CAPTURED, merchantId, currency, amount, getCurrentTimestamp());
-
-        // Record revenue metrics
-        // This is actual money collected
     }
 
     private void recordPaymentRefunded(String merchantId, String currency, BigDecimal amount) {
-        log.info(METRIC_LOG_FORMAT, EVENT_TYPE_REFUNDED, merchantId, currency, amount, getCurrentTimestamp());
-
-        // Track refund rates and amounts
+        log.warn(METRIC_LOG_FORMAT, EVENT_TYPE_REFUNDED, merchantId, currency, amount, getCurrentTimestamp());
     }
 
     private void recordPaymentFailed(String merchantId, String currency, BigDecimal amount) {
-        log.info(METRIC_LOG_FORMAT, EVENT_TYPE_FAILED, merchantId, currency, amount, getCurrentTimestamp());
-
-        // Track failure rates for monitoring and alerting
+        log.error(METRIC_LOG_FORMAT, EVENT_TYPE_FAILED, merchantId, currency, amount, getCurrentTimestamp());
     }
 
     private String getCurrentTimestamp() {

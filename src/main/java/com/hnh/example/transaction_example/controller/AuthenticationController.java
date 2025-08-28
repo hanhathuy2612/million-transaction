@@ -1,5 +1,7 @@
 package com.hnh.example.transaction_example.controller;
 
+import com.hnh.example.transaction_example.dto.UserResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,21 +12,22 @@ import org.springframework.web.bind.annotation.RestController;
 import com.hnh.example.transaction_example.dto.LoginRequest;
 import com.hnh.example.transaction_example.dto.RegisterRequest;
 import com.hnh.example.transaction_example.dto.TokenResponse;
-import com.hnh.example.transaction_example.service.UserService;
+import com.hnh.example.transaction_example.service.AuthService;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication (Login, Register,...)", description = "User authentication and registration API")
 public class AuthenticationController {
 
-    private final UserService userService;
+    private final AuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
         HttpHeaders httpHeaders = new HttpHeaders();
-        TokenResponse token = userService.login(request);
+        TokenResponse token = authService.login(request);
         httpHeaders.setBearerAuth(token.getToken());
         return ResponseEntity.ok()
                 .headers(httpHeaders)
@@ -32,8 +35,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
-        userService.register(request);
-        return ResponseEntity.ok("Register successful");
+    public ResponseEntity<UserResponse> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
 }

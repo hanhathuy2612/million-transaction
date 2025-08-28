@@ -44,14 +44,12 @@ public class WebhookService {
      * Send webhook asynchronously with retry logic
      */
     @Async
-    public CompletableFuture<Void> sendWebhookAsync(String merchantId, String eventType, JsonNode eventData) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                sendWebhook(merchantId, eventType, eventData);
-            } catch (Exception e) {
-                log.error("Failed to send webhook for merchant: {} event: {}", merchantId, eventType, e);
-            }
-        });
+    public void sendWebhookAsync(String merchantId, String eventType, JsonNode eventData) {
+        try {
+            sendWebhook(merchantId, eventType, eventData);
+        } catch (Exception e) {
+            log.error("Failed to send webhook for merchant: {} event: {}", merchantId, eventType, e);
+        }
     }
 
     /**

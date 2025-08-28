@@ -22,7 +22,7 @@ import org.springframework.http.ResponseEntity;
 import com.hnh.example.transaction_example.domain.Payment;
 import com.hnh.example.transaction_example.dto.PaymentRequest;
 import com.hnh.example.transaction_example.dto.PaymentResponse;
-import com.hnh.example.transaction_example.service.PaymentService;
+import com.hnh.example.transaction_example.service.payment.PaymentService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Payment Controller Tests")

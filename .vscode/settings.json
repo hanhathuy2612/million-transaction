@@ -5,8 +5,6 @@
     // Java formatting settings
     "java.format.settings.url": "",
     "java.format.settings.profile": "",
-    "java.format.onType.enabled": true,
-    "java.format.onSave.enabled": true,
     // Editor formatting
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,

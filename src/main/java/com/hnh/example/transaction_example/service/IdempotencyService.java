@@ -36,6 +36,7 @@ public class IdempotencyService {
     /**
      * Check if request is idempotent and return cached response if exists
      */
+    @Transactional(readOnly = true)
     public Optional<ResponseEntity<Object>> checkIdempotency(String merchantId, String idempotencyKey,
             Object requestBody) {
         if (merchantId == null || merchantId.trim().isEmpty() ||

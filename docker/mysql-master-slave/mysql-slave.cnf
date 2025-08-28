@@ -5,18 +5,27 @@ server-id = 2
 # Binary log + GTID (enable log-bin for potential slave-chain/backup later)
 log-bin = mysql-bin
 binlog_format = ROW
-binlog_row_image = FULL
+binlog_row_image = MINIMAL
 gtid_mode = ON
 enforce_gtid_consistency = ON
 log_slave_updates = ON
 relay_log = mysql-relay-bin
+sync_binlog = 1
 
 # Basic performance
 innodb_flush_log_at_trx_commit = 2
 
 # Connection
-max_connections = 200
+max_connections = 300
 max_connect_errors = 1000
+thread_cache_size = 64
+table_open_cache = 4096
+
+# InnoDB
+innodb_buffer_pool_size = 1G       # Adjust based on your RAM
+innodb_log_file_size = 512M
+innodb_flush_log_at_trx_commit = 1 # durability
+innodb_flush_method = O_DIRECT
 
 # Charset
 character-set-server = utf8mb4

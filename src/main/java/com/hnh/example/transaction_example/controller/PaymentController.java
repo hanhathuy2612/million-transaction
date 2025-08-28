@@ -4,7 +4,7 @@ import com.hnh.example.transaction_example.dto.CaptureRequest;
 import com.hnh.example.transaction_example.dto.PaymentRequest;
 import com.hnh.example.transaction_example.dto.PaymentResponse;
 import com.hnh.example.transaction_example.dto.RefundRequest;
-import com.hnh.example.transaction_example.service.PaymentService;
+import com.hnh.example.transaction_example.service.payment.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

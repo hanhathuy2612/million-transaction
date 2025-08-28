@@ -11,12 +11,15 @@ spring:
       password: FormosVN@123
       driver-class-name: com.mysql.cj.jdbc.Driver
       hikari:
+        pool-name: MasterHikariCP
         maximum-pool-size: 40
         minimum-idle: 10
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
-        pool-name: MasterHikariCP
+        keepalive-time: 300000
+        leak-detection-threshold: 15000
+        connection-test-query: "SELECT 1"
 
     # Slave database configuration
     slave:
@@ -25,13 +28,17 @@ spring:
       password: FormosVN@123
       driver-class-name: com.mysql.cj.jdbc.Driver
       hikari:
+        pool-name: SlaveHikariCP
         maximum-pool-size: 40
         minimum-idle: 10
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
-        pool-name: SlaveHikariCP
+        keepalive-time: 300000
+        leak-detection-threshold: 15000
+        connection-test-query: "SELECT 1"
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
     show-sql: false
@@ -117,7 +124,6 @@ springdoc:
     path: /v3/api-docs
     # Optional: smaller, cleaner schemas
     resolve-schema-properties: true
-    remove-broken-reference-definitions: true
     # Optional: disable caching while developing (default is true in prod)
     enabled: true
   # --- Swagger UI (HTML/JS app) ---
@@ -139,13 +145,10 @@ springdoc:
     display-operation-id: false
     default-models-expand-depth: 1
     default-model-expand-depth: 1
-    default-model-renderer: example # model | example
     show-common-extensions: true
     show-extensions: true
     # "Try it out" & code snippets
     try-it-out-enabled: true
-    request-snippets-enabled: true
-    response-snippets-enabled: true
     # Syntax highlight in the UI
     syntax-highlight:
       activated: true

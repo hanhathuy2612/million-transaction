@@ -2,12 +2,19 @@
 # Identity
 server-id = 1
 
+# InnoDB
+innodb_buffer_pool_size = 1G # Adjust based on your RAM
+innodb_log_file_size = 512M # Adjust based on your workload
+innodb_flush_log_at_trx_commit = 1 # Durability guarantee
+innodb_flush_method = O_DIRECT
+
 # Binary log + GTID cho replication
 log-bin = mysql-bin
 binlog_format = ROW
-binlog_row_image = FULL
+binlog_row_image = MINIMAL
 gtid_mode = ON
 enforce_gtid_consistency = ON
+sync_binlog = 1
 
 # (Optional) Relay log cho slave
 log_slave_updates = ON
@@ -16,8 +23,10 @@ log_slave_updates = ON
 innodb_flush_log_at_trx_commit = 2
 
 # Connection
-max_connections = 200
+max_connections = 300
 max_connect_errors = 1000
+thread_cache_size = 64
+table_open_cache = 4096
 
 # Charset
 character-set-server = utf8mb4

@@ -1,10 +1,10 @@
-package com.hnh.example.transaction_example.service;
+package com.hnh.example.transaction_example.service.payment;
 
 import com.hnh.example.transaction_example.domain.Payment;
-import com.hnh.example.transaction_example.dto.PaymentRequest;
 import com.hnh.example.transaction_example.dto.PaymentAuthorizationResult;
 import com.hnh.example.transaction_example.dto.PaymentCaptureResult;
 import com.hnh.example.transaction_example.dto.PaymentRefundResult;
+import com.hnh.example.transaction_example.dto.PaymentRequest;
 
 /**
  * Service interface for real payment processor integration
