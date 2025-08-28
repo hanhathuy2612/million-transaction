@@ -1,4 +1,4 @@
-package com.hnh.example.transaction_example.service.payment;
+package com.hnh.example.transaction_example.service.payment.processor;
 
 import com.hnh.example.transaction_example.domain.Payment;
 import com.hnh.example.transaction_example.dto.PaymentAuthorizationResult;

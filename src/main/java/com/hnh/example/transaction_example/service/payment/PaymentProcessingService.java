@@ -10,6 +10,7 @@ import com.hnh.example.transaction_example.repository.PaymentLedgerRepository;
 import com.hnh.example.transaction_example.repository.PaymentRepository;
 import com.hnh.example.transaction_example.service.outbox.OutboxService;
 
+import com.hnh.example.transaction_example.service.payment.processor.StripePaymentProcessorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -66,7 +67,7 @@ public class PaymentProcessingService {
                     .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
             // Call real payment processor for authorization
-            PaymentAuthorizationResult authResult = stripeProcessor.simulatePayment(payment,
+            PaymentAuthorizationResult authResult = stripeProcessor.authorizePayment(payment,
                     buildPaymentRequestFromPayment(payment));
 
             if (authResult.isSuccess()) {
