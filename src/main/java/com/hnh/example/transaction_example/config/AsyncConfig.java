@@ -36,4 +36,30 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean(name = "paymentProcessingExecutor")
+    public Executor paymentProcessingExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(20);
+        executor.setMaxPoolSize(50);
+        executor.setQueueCapacity(1000);
+        executor.setThreadNamePrefix("Payment-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(120);
+        executor.initialize();
+        return executor;
+    }
+
+    @Bean(name = "outboxRelayExecutor")
+    public Executor outboxRelayExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(25);
+        executor.setQueueCapacity(500);
+        executor.setThreadNamePrefix("Outbox-");
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        executor.initialize();
+        return executor;
+    }
 }

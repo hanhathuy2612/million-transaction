@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class OutboxRelayService {
      * Scheduled job to relay outbox events to Kafka
      * Runs every 5 seconds to ensure low latency
      */
+    @Async("outboxRelayExecutor")
     @Scheduled(fixedDelayString = "${outbox.relay.interval:5000}")
     public void relayEvents() {
         try {

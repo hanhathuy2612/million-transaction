@@ -13,6 +13,8 @@ import com.hnh.example.transaction_example.service.outbox.OutboxService;
 import com.hnh.example.transaction_example.service.payment.processor.StripePaymentProcessorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,6 +62,7 @@ public class PaymentProcessingService {
         return paymentMapper.toPaymentResponse(payment);
     }
 
+    @Async("paymentProcessingExecutor")
     @Transactional(timeout = 10)
     public void processPaymentAsync(UUID paymentId) {
         try {
@@ -67,7 +70,7 @@ public class PaymentProcessingService {
                     .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
             // Call real payment processor for authorization
-            PaymentAuthorizationResult authResult = stripeProcessor.authorizePayment(payment,
+            PaymentAuthorizationResult authResult = stripeProcessor.simulatePayment(payment,
                     buildPaymentRequestFromPayment(payment));
 
             if (authResult.isSuccess()) {

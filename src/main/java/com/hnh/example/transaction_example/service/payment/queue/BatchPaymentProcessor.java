@@ -6,6 +6,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -22,18 +23,25 @@ public class BatchPaymentProcessor {
     private final PaymentProcessingService processingService;
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
-    private static final int BATCH_SIZE = 10;
+    @Value("${app.payment.processing.batch-size:10}")
+    private int batchSize;
+
+    @Value("${app.payment.processing.max-retries:3}")
+    private int maxRetries;
+
+    @Value("${app.payment.processing.retry-delay:1000}")
+    private final long retryDelay = 1000;
 
     /**
      * Process payments in batches every 1 second
      */
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelay = retryDelay)
     public void processBatch() {
         long queueSize = queueService.getQueueSize();
         if (queueSize == 0)
             return;
 
-        int batchSize = Math.min(BATCH_SIZE, (int) queueSize); // Max 10 per batch
+        int batchSize = Math.min(this.batchSize, (int) queueSize);
         List<PaymentQueueItem> batch = new ArrayList<>();
 
         // Dequeue batch
@@ -77,7 +85,7 @@ public class BatchPaymentProcessor {
 
     private void handleFailure(PaymentQueueItem item, Exception e) {
         // Retry logic or DLQ (Dead Letter Queue)
-        if (item.getRetryCount() < 3) {
+        if (item.getRetryCount() < maxRetries) {
             item.setRetryCount(item.getRetryCount() + 1);
             item.setErrorMessage(e.getMessage());
             queueService.enqueuePayment(item.getPaymentId(), item.getRequest());

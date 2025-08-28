@@ -12,14 +12,12 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
       hikari:
         pool-name: MasterHikariCP
-        maximum-pool-size: 40
-        minimum-idle: 10
-        connection-timeout: 30000
-        idle-timeout: 600000
-        max-lifetime: 1800000
-        keepalive-time: 300000
-        leak-detection-threshold: 15000
-        connection-test-query: "SELECT 1"
+        maximum-pool-size: 60
+        minimum-idle: 20
+        connection-timeout: 20000
+        idle-timeout: 300000
+        max-lifetime: 900000
+        leak-detection-threshold: 10000
 
     # Slave database configuration
     slave:
@@ -29,14 +27,12 @@ spring:
       driver-class-name: com.mysql.cj.jdbc.Driver
       hikari:
         pool-name: SlaveHikariCP
-        maximum-pool-size: 40
-        minimum-idle: 10
-        connection-timeout: 30000
-        idle-timeout: 600000
-        max-lifetime: 1800000
-        keepalive-time: 300000
-        leak-detection-threshold: 15000
-        connection-test-query: "SELECT 1"
+        maximum-pool-size: 60
+        minimum-idle: 20
+        connection-timeout: 20000
+        idle-timeout: 300000
+        max-lifetime: 900000
+        leak-detection-threshold: 10000
   jpa:
     open-in-view: false
     hibernate:
@@ -57,12 +53,12 @@ spring:
       host: localhost
       password: redis123
       port: 6379
-      timeout: 2000ms
+      timeout: 1000ms
       jedis:
         pool:
-          max-active: 20
-          max-idle: 10
-          min-idle: 5
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -167,3 +163,10 @@ app:
         base64-secret: HPEQnZmHLmwAZ0bsQKu3LpOZjr/6AWMUdXl9TE9u0LFWti0oUcrMWmxVwANO6fjgzhY7c2JJ+5DMjEl4caAqMw==
         token-validity-in-seconds: 604800 # 1 week
         token-validity-in-seconds-for-remember-me: 604800 # 1 week
+  payment:
+    guard:
+      timeout: 1000
+    processing:
+      batch-size: 50
+      max-retries: 3
+      retry-delay: 1000
