@@ -13,43 +13,37 @@ public class HealthCheckConfig {
 
     @Bean
     public HealthIndicator paymentServiceHealthIndicator(PaymentService paymentService) {
-        return new HealthIndicator() {
-            @Override
-            public Health health() {
-                try {
-                    // Check if the service is working
-                    return Health.up()
-                            .withDetail("service", "PaymentService")
-                            .withDetail("timestamp", System.currentTimeMillis())
-                            .build();
-                } catch (Exception e) {
-                    return Health.down()
-                            .withDetail("service", "PaymentService")
-                            .withDetail("error", e.getMessage())
-                            .build();
-                }
+        return () -> {
+            try {
+                // Check if the service is working
+                return Health.up()
+                        .withDetail("service", "PaymentService")
+                        .withDetail("timestamp", System.currentTimeMillis())
+                        .build();
+            } catch (Exception e) {
+                return Health.down()
+                        .withDetail("service", "PaymentService")
+                        .withDetail("error", e.getMessage())
+                        .build();
             }
         };
     }
 
     @Bean
     public HealthIndicator outboxServiceHealthIndicator(OutboxService outboxService) {
-        return new HealthIndicator() {
-            @Override
-            public Health health() {
-                try {
-                    Long unpublishedCount = outboxService.getUnpublishedEventCount();
-                    return Health.up()
-                            .withDetail("service", "OutboxService")
-                            .withDetail("unpublished_events", unpublishedCount)
-                            .withDetail("timestamp", System.currentTimeMillis())
-                            .build();
-                } catch (Exception e) {
-                    return Health.down()
-                            .withDetail("service", "OutboxService")
-                            .withDetail("error", e.getMessage())
-                            .build();
-                }
+        return () -> {
+            try {
+                Long unpublishedCount = outboxService.getUnpublishedEventCount();
+                return Health.up()
+                        .withDetail("service", "OutboxService")
+                        .withDetail("unpublished_events", unpublishedCount)
+                        .withDetail("timestamp", System.currentTimeMillis())
+                        .build();
+            } catch (Exception e) {
+                return Health.down()
+                        .withDetail("service", "OutboxService")
+                        .withDetail("error", e.getMessage())
+                        .build();
             }
         };
     }
