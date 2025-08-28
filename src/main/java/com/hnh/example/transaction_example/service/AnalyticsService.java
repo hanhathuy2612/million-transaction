@@ -106,7 +106,7 @@ public class AnalyticsService {
         }
 
         // Get payments from database
-        List<Payment> payments = paymentRepository.findByMerchantIdAndCreatedAtBetween(merchantId, fromDate, toDate);
+        List<Payment> payments = paymentRepository.findByMerchantIdAndCreatedDateBetween(merchantId, fromDate, toDate);
 
         // Calculate analytics
         Map<String, Object> analytics = calculateAnalytics(payments);

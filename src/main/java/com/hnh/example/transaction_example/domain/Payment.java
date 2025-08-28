@@ -17,16 +17,19 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Table(name = "payments")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Payment {
+@SuperBuilder(toBuilder = true)
+public class Payment extends AbstractAuditingEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -61,14 +64,6 @@ public class Payment {
     @Column(name = "refunded_amount", precision = 19, scale = 2, columnDefinition = "DECIMAL(19,2) DEFAULT 0")
     @Builder.Default
     private BigDecimal refundedAmount = BigDecimal.ZERO;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 
     @Column(name = "authorized_at")
     private LocalDateTime authorizedAt;

@@ -83,7 +83,7 @@ public class PaymentController {
     @GetMapping
     public ResponseEntity<List<PaymentResponse>> listPayments(
             @RequestHeader(MERCHANT_ID) String merchantId,
-            @ParameterObject @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+            @ParameterObject @PageableDefault(size = 20, sort = "createdDate") Pageable pageable) {
 
         log.debug("Listing payments for merchant: {} with pagination: {}", merchantId, pageable);
         Page<PaymentResponse> responsePage = paymentService.listPayments(merchantId, pageable);

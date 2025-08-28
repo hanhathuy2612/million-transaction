@@ -25,6 +25,11 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Stripe implementation of PaymentProcessorService
+ * This class is used to process payments using Stripe
+ * It implements the PaymentProcessorService interface
+ * It is used to authorize, capture, and refund payments
+ * It is used to simulate payments
+ * It is used to create metadata for payments
  */
 @Slf4j
 @Service
@@ -37,7 +42,6 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
     private String defaultCurrency;
 
     private static final String SUCCESS_STATUS = "succeeded";
-    private static final String FAILED_STATUS = "failed";
 
     public StripePaymentProcessorService(@Value("${stripe.secret-key}") String stripeSecretKey) {
         Stripe.apiKey = stripeSecretKey;
@@ -48,7 +52,7 @@ public class StripePaymentProcessorService implements PaymentProcessorService {
         log.info("Simulating payment {} with Stripe", payment.getId());
         boolean success = Math.random() < 0.5;
         return PaymentAuthorizationResult.builder()
-                .success(success)
+                .success(true)
                 .processorTransactionId("simulated-transaction-id")
                 .authorizedAmount(payment.getAmount())
                 .currency(payment.getCurrency())

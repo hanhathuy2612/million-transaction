@@ -9,14 +9,18 @@
         <sql>
             CREATE TABLE payment_ledger
             (
-                seq           BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL,
-                payment_id    BINARY(16) NOT NULL,
-                entry_type    VARCHAR(50)    NOT NULL,
-                delta_amount  DECIMAL(19, 2) NOT NULL,
-                balance_after DECIMAL(19, 2) NOT NULL,
-                occurred_at   TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                description   TEXT,
-                reference_id  VARCHAR(255)
+                seq                BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL,
+                payment_id         BINARY(16) NOT NULL,
+                entry_type         VARCHAR(50)    NOT NULL,
+                delta_amount       DECIMAL(19, 2) NOT NULL,
+                balance_after      DECIMAL(19, 2) NOT NULL,
+                occurred_at        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                description        TEXT,
+                reference_id       VARCHAR(255),
+                created_by         VARCHAR(255)   NOT NULL DEFAULT 'SYSTEM',
+                last_modified_by   VARCHAR(255)   NOT NULL DEFAULT 'SYSTEM',
+                created_date       TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_modified_date TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             );
 
             ALTER TABLE payment_ledger
@@ -26,6 +30,11 @@
             ALTER TABLE payment_ledger
                 ADD CONSTRAINT chk_balance_after_positive
                     CHECK (balance_after >= 0);
+
+            -- Payment ledger indexes
+            CREATE INDEX idx_payment_ledger_payment_id ON payment_ledger (payment_id);
+            CREATE INDEX idx_payment_ledger_occurred_at ON payment_ledger (occurred_at);
+            CREATE INDEX idx_payment_ledger_entry_type ON payment_ledger (entry_type);
         </sql>
     </changeSet>
 

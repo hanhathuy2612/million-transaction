@@ -8,14 +8,16 @@
             -- Create user table
             CREATE TABLE app_user
             (
-                id            BIGINT AUTO_INCREMENT PRIMARY KEY,
-                email         VARCHAR(255) UNIQUE NOT NULL,
-                password_hash VARCHAR(255)        NOT NULL,
-                first_name    VARCHAR(255)        NOT NULL,
-                last_name     VARCHAR(255)        NOT NULL,
-                phone_number  VARCHAR(255)        NOT NULL,
-                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                id                 BIGINT AUTO_INCREMENT PRIMARY KEY,
+                email              VARCHAR(255) UNIQUE NOT NULL,
+                password_hash      VARCHAR(255)        NOT NULL,
+                first_name         VARCHAR(255)        NOT NULL,
+                last_name          VARCHAR(255)        NOT NULL,
+                phone_number       VARCHAR(255)        NOT NULL,
+                created_by         VARCHAR(255)        NOT NULL DEFAULT 'SYSTEM',
+                last_modified_by   VARCHAR(255)        NOT NULL DEFAULT 'SYSTEM',
+                created_date       TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_modified_date TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             );
 
             -- Create authority table

@@ -38,7 +38,7 @@ public class WebhookController {
                       "url": "https://merchant.example.com/webhooks/payments",
                       "events": ["payment.authorized", "payment.captured", "payment.refunded"],
                       "status": "active",
-                      "createdAt": "2024-01-15T10:30:00Z"
+                      "createdDate": "2024-01-15T10:30:00Z"
                     }
                     """))),
             @ApiResponse(responseCode = "400", description = "Invalid webhook configuration", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class), examples = @ExampleObject(name = "Invalid URL", value = """
@@ -65,7 +65,7 @@ public class WebhookController {
         response.setUrl(request.getUrl());
         response.setEvents(request.getEvents());
         response.setStatus("active");
-        response.setCreatedAt(java.time.LocalDateTime.now().toString());
+        response.setCreatedDate(java.time.LocalDateTime.now().toString());
 
         return ResponseEntity.ok(response);
     }
@@ -183,7 +183,7 @@ public class WebhookController {
         private String status;
 
         @Schema(description = "Creation timestamp", example = "2024-01-15T10:30:00Z")
-        private String createdAt;
+        private String createdDate;
 
         // Constructors
         public WebhookConfigResponse() {
@@ -229,12 +229,12 @@ public class WebhookController {
             this.status = status;
         }
 
-        public String getCreatedAt() {
-            return createdAt;
+        public String getCreatedDate() {
+            return createdDate;
         }
 
-        public void setCreatedAt(String createdAt) {
-            this.createdAt = createdAt;
+        public void setCreatedDate(String createdDate) {
+            this.createdDate = createdDate;
         }
     }
 

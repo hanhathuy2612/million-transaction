@@ -21,8 +21,6 @@ public interface PaymentMapper {
                 .referenceId(payment.getReferenceId())
                 .capturedAmount(payment.getCapturedAmount())
                 .refundedAmount(payment.getRefundedAmount())
-                .createdAt(payment.getCreatedAt())
-                .updatedAt(payment.getUpdatedAt())
                 .authorizedAt(payment.getAuthorizedAt())
                 .capturedAt(payment.getCapturedAt())
                 .failedAt(payment.getFailedAt())

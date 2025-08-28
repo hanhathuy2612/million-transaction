@@ -4,8 +4,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -19,17 +19,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hnh.example.transaction_example.domain.Webhook;
+import com.hnh.example.transaction_example.dto.CreateWebhookRequest;
+import com.hnh.example.transaction_example.dto.WebhookResponse;
+import com.hnh.example.transaction_example.exception.WebhookNotFoundException;
+import com.hnh.example.transaction_example.mapper.WebhookMapper;
+import com.hnh.example.transaction_example.repository.WebhookRepository;
 import com.hnh.example.transaction_example.util.JsonUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class WebhookService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final WebhookRepository webhookRepository;
+    private final WebhookMapper webhookMapper;
 
     // In production, these would come from merchant configuration
     private static final Map<String, String> MERCHANT_WEBHOOK_URLS = Map.of(
@@ -39,6 +47,34 @@ public class WebhookService {
     private static final Map<String, String> MERCHANT_WEBHOOK_SECRETS = Map.of(
             "merchant_1", "webhook_secret_1",
             "merchant_2", "webhook_secret_2");
+
+    public WebhookResponse createWebhook(CreateWebhookRequest request) {
+        Webhook webhook = webhookMapper.toEntity(request);
+        Webhook savedWebhook = webhookRepository.save(webhook);
+        return webhookMapper.toResponse(savedWebhook);
+    }
+
+    public WebhookResponse getWebhook(Long id) {
+        Webhook webhook = webhookRepository.findById(id)
+                .orElseThrow(() -> new WebhookNotFoundException(id));
+        return webhookMapper.toResponse(webhook);
+    }
+
+    public Webhook getWebhookEntity(String merchantId) {
+        return webhookRepository.findByMerchantId(merchantId)
+                .stream()
+                .findFirst()
+                .orElse(null);
+    }
+
+    public List<WebhookResponse> getWebhooks(String merchantId) {
+        List<Webhook> webhooks = webhookRepository.findByMerchantId(merchantId);
+        return webhooks.stream().map(webhookMapper::toResponse).toList();
+    }
+
+    public void deleteWebhook(Long id) {
+        webhookRepository.deleteById(id);
+    }
 
     /**
      * Send webhook asynchronously with retry logic
@@ -56,8 +92,14 @@ public class WebhookService {
      * Send webhook with HMAC signature
      */
     private void sendWebhook(String merchantId, String eventType, JsonNode eventData) {
-        String webhookUrl = MERCHANT_WEBHOOK_URLS.get(merchantId);
-        String secret = MERCHANT_WEBHOOK_SECRETS.get(merchantId);
+        Webhook webhook = getWebhookEntity(merchantId);
+        if (webhook == null) {
+            log.debug("No webhook configured for merchant: {}", merchantId);
+            return;
+        }
+
+        String webhookUrl = webhook.getWebhookUrl();
+        String secret = webhook.getWebhookSecret();
 
         if (webhookUrl == null) {
             log.debug("No webhook URL configured for merchant: {}", merchantId);

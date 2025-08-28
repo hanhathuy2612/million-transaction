@@ -9,19 +9,26 @@
         <sql>
             CREATE TABLE idempotency_keys
             (
-                id              BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL,
-                merchant_id     VARCHAR(255) NOT NULL,
-                idempotency_key VARCHAR(255) NOT NULL,
-                request_hash    VARCHAR(512) NOT NULL,
-                response_code   INT          NOT NULL,
-                response_body   JSON,
-                created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                expires_at      TIMESTAMP    NOT NULL
+                id                 BIGINT AUTO_INCREMENT PRIMARY KEY NOT NULL,
+                merchant_id        VARCHAR(255) NOT NULL,
+                idempotency_key    VARCHAR(255) NOT NULL,
+                request_hash       VARCHAR(512) NOT NULL,
+                response_code      INT          NOT NULL,
+                response_body      JSON,
+                expires_at         TIMESTAMP    NOT NULL,
+                created_by         VARCHAR(255) NOT NULL DEFAULT 'SYSTEM',
+                last_modified_by   VARCHAR(255) NOT NULL DEFAULT 'SYSTEM',
+                created_date       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_modified_date TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             );
 
             ALTER TABLE idempotency_keys
                 ADD CONSTRAINT uk_merchant_idempotency_key
                     UNIQUE (merchant_id, idempotency_key);
+
+            -- Idempotency keys indexes
+            CREATE INDEX idx_idempotency_keys_expires_at ON idempotency_keys (expires_at);
+            CREATE INDEX idx_idempotency_keys_merchant_created ON idempotency_keys (merchant_id, created_date);
         </sql>
     </changeSet>
 

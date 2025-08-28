@@ -9,22 +9,26 @@
         <sql>
             CREATE TABLE payments
             (
-                id                BINARY(16) PRIMARY KEY NOT NULL,
-                merchant_id       VARCHAR(255)   NOT NULL,
-                amount            DECIMAL(19, 2) NOT NULL,
-                currency          VARCHAR(3)     NOT NULL,
-                status            VARCHAR(50)    NOT NULL,
-                payment_method_id VARCHAR(255),
-                description       TEXT,
-                reference_id      VARCHAR(255),
-                captured_amount   DECIMAL(19, 2) NOT NULL DEFAULT 0.00,
-                refunded_amount   DECIMAL(19, 2) NOT NULL DEFAULT 0.00,
-                created_at        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at        TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                authorized_at     TIMESTAMP,
-                captured_at       TIMESTAMP,
-                failed_at         TIMESTAMP,
-                failure_reason    TEXT
+                id                       BINARY(16) PRIMARY KEY NOT NULL,
+                merchant_id              VARCHAR(255)   NOT NULL,
+                amount                   DECIMAL(19, 2) NOT NULL,
+                currency                 VARCHAR(3)     NOT NULL,
+                status                   VARCHAR(50)    NOT NULL,
+                payment_method_id        VARCHAR(255),
+                description              TEXT,
+                reference_id             VARCHAR(255),
+                captured_amount          DECIMAL(19, 2) NOT NULL DEFAULT 0.00,
+                refunded_amount          DECIMAL(19, 2) NOT NULL DEFAULT 0.00,
+                authorized_at            TIMESTAMP,
+                captured_at              TIMESTAMP,
+                failed_at                TIMESTAMP,
+                failure_reason           TEXT,
+                processor_transaction_id VARCHAR(255),
+                processor_name           VARCHAR(255),
+                created_by               VARCHAR(255)   NOT NULL DEFAULT 'SYSTEM',
+                last_modified_by         VARCHAR(255)   NOT NULL DEFAULT 'SYSTEM',
+                created_date             TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_modified_date       TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             );
 
             ALTER TABLE payments
@@ -37,6 +41,16 @@
                 ADD CONSTRAINT chk_captured_lte_amount CHECK (captured_amount &lt;= amount);
             ALTER TABLE payments
                 ADD CONSTRAINT chk_refunded_lte_captured CHECK (refunded_amount &lt;= captured_amount);
+
+            CREATE INDEX idx_payments_processor_transaction_id ON payments (processor_transaction_id);
+            CREATE INDEX idx_payments_processor_name ON payments (processor_name);
+            CREATE INDEX idx_payments_merchant_id ON payments (merchant_id);
+            CREATE INDEX idx_payments_status ON payments (status);
+            CREATE INDEX idx_payments_created_date ON payments (created_date);
+            CREATE INDEX idx_payments_merchant_status ON payments (merchant_id, status);
+            CREATE INDEX idx_payments_merchant_created_date ON payments (merchant_id, created_date);
+            CREATE INDEX idx_payments_reference_id ON payments (reference_id);
+
         </sql>
     </changeSet>
 

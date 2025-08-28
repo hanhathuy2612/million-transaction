@@ -14,11 +14,11 @@ import java.util.List;
 public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> {
 
     // Find unpublished events for outbox relay
-    @Query("SELECT o FROM OutboxEvent o WHERE o.published = false ORDER BY o.createdAt ASC")
+    @Query("SELECT o FROM OutboxEvent o WHERE o.published = false ORDER BY o.createdDate ASC")
     List<OutboxEvent> findUnpublishedEvents();
 
     // Find unpublished events with limit (for batch processing)
-    @Query("SELECT o FROM OutboxEvent o WHERE o.published = false ORDER BY o.createdAt ASC LIMIT :limit")
+    @Query("SELECT o FROM OutboxEvent o WHERE o.published = false ORDER BY o.createdDate ASC LIMIT :limit")
     List<OutboxEvent> findUnpublishedEventsWithLimit(@Param("limit") int limit);
 
     // Mark events as published in batch
@@ -27,7 +27,7 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> 
     void markAsPublished(@Param("ids") List<Long> ids, @Param("publishedAt") LocalDateTime publishedAt);
 
     // Find events by aggregate for debugging
-    @Query("SELECT o FROM OutboxEvent o WHERE o.aggregateId = :aggregateId ORDER BY o.createdAt ASC")
+    @Query("SELECT o FROM OutboxEvent o WHERE o.aggregateId = :aggregateId ORDER BY o.createdDate ASC")
     List<OutboxEvent> findByAggregateId(@Param("aggregateId") java.util.UUID aggregateId);
 
     // Cleanup old published events (for housekeeping)
@@ -40,6 +40,6 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> 
     Long countUnpublishedEvents();
 
     // Find events by type for analytics
-    @Query("SELECT o FROM OutboxEvent o WHERE o.eventType = :eventType AND o.createdAt >= :since")
+    @Query("SELECT o FROM OutboxEvent o WHERE o.eventType = :eventType AND o.createdDate >= :since")
     List<OutboxEvent> findByEventTypeSince(@Param("eventType") String eventType, @Param("since") LocalDateTime since);
 }

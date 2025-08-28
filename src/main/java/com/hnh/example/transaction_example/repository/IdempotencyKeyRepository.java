@@ -29,7 +29,7 @@ public interface IdempotencyKeyRepository extends JpaRepository<IdempotencyKey, 
     Long countActiveKeysByMerchant(@Param("merchantId") String merchantId, @Param("now") LocalDateTime now);
 
     // Find recent keys for a merchant (debugging)
-    @Query("SELECT i FROM IdempotencyKey i WHERE i.merchantId = :merchantId AND i.createdAt >= :since ORDER BY i.createdAt DESC")
+    @Query("SELECT i FROM IdempotencyKey i WHERE i.merchantId = :merchantId AND i.createdDate >= :since ORDER BY i.createdDate DESC")
     java.util.List<IdempotencyKey> findRecentKeysByMerchant(
             @Param("merchantId") String merchantId, 
             @Param("since") LocalDateTime since

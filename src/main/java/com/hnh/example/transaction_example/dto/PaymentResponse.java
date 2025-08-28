@@ -27,7 +27,7 @@ public class PaymentResponse {
     private String referenceId;
     private BigDecimal capturedAmount;
     private BigDecimal refundedAmount;
-    private LocalDateTime createdAt;
+    private LocalDateTime createdDate;
     private LocalDateTime updatedAt;
     private LocalDateTime authorizedAt;
     private LocalDateTime capturedAt;
