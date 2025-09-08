@@ -62,7 +62,7 @@ public class IdempotencyService {
      * Generate and validate idempotency key
      */
     public String generateAndValidateIdempotencyKey(String merchantId, String operation, String clientKey) {
-        // Nếu client không cung cấp key, tự generate
+        // If the client doesn't provide a key, auto generate key
         if (clientKey == null || clientKey.trim().isEmpty()) {
             String generatedKey = generateIdempotencyKey(merchantId, operation);
             log.info("Generated idempotency key: {} for merchant: {} operation: {}", generatedKey, merchantId,
@@ -290,22 +290,19 @@ public class IdempotencyService {
      * Extract only critical business data for hashing
      */
     private String extractCriticalData(Object requestBody) {
-        if (requestBody instanceof PaymentRequest) {
-            PaymentRequest request = (PaymentRequest) requestBody;
+        if (requestBody instanceof PaymentRequest request) {
             return String.format("%s_%s_%s_%s_%s",
                     request.getMerchantId(),
                     request.getAmount().toString(),
                     request.getCurrency(),
                     request.getPaymentMethodId(),
                     request.getDescription() != null ? request.getDescription() : "");
-        } else if (requestBody instanceof CaptureRequest) {
-            CaptureRequest request = (CaptureRequest) requestBody;
-            return String.format("CAPTURE_%s", request.getAmount().toString());
-        } else if (requestBody instanceof RefundRequest) {
-            RefundRequest request = (RefundRequest) requestBody;
+        } else if (requestBody instanceof CaptureRequest captureRequest) {
+            return String.format("CAPTURE_%s", captureRequest.getAmount().toString());
+        } else if (requestBody instanceof RefundRequest refundRequest) {
             return String.format("REFUND_%s_%s",
-                    request.getAmount().toString(),
-                    request.getReason() != null ? request.getReason() : "");
+                    refundRequest.getAmount().toString(),
+                    refundRequest.getReason() != null ? refundRequest.getReason() : "");
         }
 
         // Fallback to full JSON hash for unknown types
@@ -316,10 +313,9 @@ public class IdempotencyService {
      * Calculate TTL based on request type and business logic
      */
     private Duration calculateTTL(Object requestBody) {
-        if (requestBody instanceof PaymentRequest) {
-            PaymentRequest request = (PaymentRequest) requestBody;
+        if (requestBody instanceof PaymentRequest paymentRequest) {
             // High-value payments get longer TTL
-            if (request.getAmount().compareTo(java.math.BigDecimal.valueOf(1000)) > 0) {
+            if (paymentRequest.getAmount().compareTo(java.math.BigDecimal.valueOf(1000)) > 0) {
                 return Duration.ofDays(30);
             }
             return PAYMENT_CREATE_TTL;

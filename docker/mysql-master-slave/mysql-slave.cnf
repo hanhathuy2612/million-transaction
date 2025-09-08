@@ -2,6 +2,9 @@
 # Identity
 server-id = 2
 
+# Authentication (fix for MySQL 8.0)
+default_authentication_plugin = mysql_native_password
+
 # Binary log + GTID (enable log-bin for potential slave-chain/backup later)
 log-bin = mysql-bin
 binlog_format = ROW

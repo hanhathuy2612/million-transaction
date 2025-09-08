@@ -60,7 +60,7 @@ class IdempotencyServiceTest {
     void testCheckIdempotency_WithValidRedisCache() {
         // Given
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        String actualHash = idempotencyService.generateRequestHash(REQUEST_BODY);
+        String actualHash = idempotencyService.generateSmartRequestHash(REQUEST_BODY);
         IdempotencyCacheDto cacheDto = new IdempotencyCacheDto(
                 actualHash, 200, "{\"status\":\"success\"}", "{}");
         when(valueOperations.get(anyString())).thenReturn(cacheDto);

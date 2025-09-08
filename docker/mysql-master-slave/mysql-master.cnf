@@ -2,6 +2,9 @@
 # Identity
 server-id = 1
 
+# Authentication (fix for MySQL 8.0)
+default_authentication_plugin = mysql_native_password
+
 # InnoDB
 innodb_buffer_pool_size = 1G # Adjust based on your RAM
 innodb_log_file_size = 512M # Adjust based on your workload
@@ -18,9 +21,6 @@ sync_binlog = 1
 
 # (Optional) Relay log cho slave
 log_slave_updates = ON
-
-# Performance
-innodb_flush_log_at_trx_commit = 2
 
 # Connection
 max_connections = 300

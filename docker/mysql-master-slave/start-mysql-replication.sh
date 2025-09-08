@@ -24,7 +24,7 @@ fi
 # --------------------------
 
 echo "🧹 Completely cleaning up previous setup..."
-$DC -f "$COMPOSE_FILE" down -v --remove-orphans
+$DC -f "$COMPOSE_FILE" down -v
 docker volume prune -f
 
 echo "🚀 Starting fresh MySQL Master-Slave replication..."
@@ -35,7 +35,7 @@ echo "⏳ Waiting for MySQL containers to be ready..."
 wait_mysql() {
   local cname="$1"
   local pw="$2"
-  for i in {1..120}; do
+  for i in {1..200}; do
     if docker exec "$cname" mysqladmin ping -uroot -p"$pw" --silent >/dev/null 2>&1; then
       echo "✅ $cname is ready"
       return 0
@@ -93,10 +93,10 @@ done
 
 echo "👤 Creating replication user on master..."
 mysql_exec "$MASTER_CN" "
-CREATE USER IF NOT EXISTS '$REPL_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$REPL_PW';
+CREATE USER IF NOT EXISTS '$REPL_USER'@'%' IDENTIFIED BY '$REPL_PW';
 GRANT REPLICATION SLAVE ON *.* TO '$REPL_USER'@'%';
 -- Enable root access from network for management
-CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED WITH mysql_native_password BY '$ROOT_PW';
+CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '$ROOT_PW';
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 "
@@ -104,7 +104,7 @@ FLUSH PRIVILEGES;
 echo "📊 Creating application database and users on master..."
 mysql_exec "$MASTER_CN" "
 CREATE DATABASE IF NOT EXISTS \`$APP_DB\`;
-CREATE USER IF NOT EXISTS '$APP_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$APP_PW';
+CREATE USER IF NOT EXISTS '$APP_USER'@'%' IDENTIFIED BY '$APP_PW';
 GRANT ALL PRIVILEGES ON \`$APP_DB\`.* TO '$APP_USER'@'%';
 FLUSH PRIVILEGES;
 "
@@ -131,8 +131,8 @@ else
   "
 fi
 
-echo "⏳ Waiting 15s for replica to establish connection..."
-sleep 15
+echo "⏳ Waiting 30s for replica to establish connection..."
+sleep 30
 
 echo "🔍 Checking replica status..."
 STATUS=$(mysql_exec "$SLAVE_CN" "SHOW REPLICA STATUS\G" 2>/dev/null || mysql_exec "$SLAVE_CN" "SHOW SLAVE STATUS\G" 2>/dev/null || true)
@@ -178,8 +178,8 @@ if [[ "$ok_flag" -eq 1 ]]; then
   INSERT INTO replication_test (test_data) VALUES ('Replication test - $(date)');
   "
   
-  echo "⏳ Waiting 3s for replication..."
-  sleep 3
+  echo "⏳ Waiting 10s for replication..."
+  sleep 10
   
   echo "🔍 Checking test data on slave..."
   TEST_RESULT=$(mysql_exec_silent "$SLAVE_CN" "SELECT COUNT(*) FROM \`$APP_DB\`.replication_test;" 2>/dev/null || echo "0")
