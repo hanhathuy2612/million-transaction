@@ -1,5 +1,9 @@
 package com.hnh.example.transaction_example.config.kafka;
 
+import static com.hnh.example.transaction_example.constant.KafkaConstant.PAYMENT_EVENTS_DLT_TOPIC;
+import static com.hnh.example.transaction_example.constant.KafkaConstant.PAYMENT_EVENTS_TOPIC;
+import static com.hnh.example.transaction_example.constant.KafkaConstant.WEBHOOK_EVENTS_TOPIC;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,6 +35,13 @@ public class KafkaConfig {
 
     @Value("${spring.kafka.consumer.group-id:payments-service}")
     private String groupId;
+
+    private static final String RETENTION_MS = "604800000"; // 7 days retention
+    private static final String CLEANUP_POLICY = "delete";
+    private static final String DLT_RETENTION_MS = "2592000000"; // 30 days retention for DLT
+    private static final String DLT_CLEANUP_POLICY = "delete";
+    private static final String RETENTION_MS_1_DAY = "86400000"; // 1 day retention
+    private static final String CLEANUP_POLICY_1_DAY = "delete";
 
     // Producer Configuration
     @Bean
@@ -98,29 +109,31 @@ public class KafkaConfig {
     // Topic Configuration
     @Bean
     public NewTopic paymentsEventsTopic() {
-        return TopicBuilder.name("payments.events.v1")
+        return TopicBuilder.name(PAYMENT_EVENTS_TOPIC)
                 .partitions(12) // Good for scaling
                 .replicas(1) // Adjust based on your Kafka cluster
-                .config("retention.ms", "604800000") // 7 days retention
-                .config("cleanup.policy", "delete")
+                .config("retention.ms", RETENTION_MS) // 7 days retention
+                .config("cleanup.policy", CLEANUP_POLICY)
                 .build();
     }
 
     @Bean
     public NewTopic paymentsEventsDeadLetterTopic() {
-        return TopicBuilder.name("payments.events.v1.dlt")
+        return TopicBuilder.name(PAYMENT_EVENTS_DLT_TOPIC)
                 .partitions(3)
                 .replicas(1)
-                .config("retention.ms", "2592000000") // 30 days retention for DLT
+                .config("retention.ms", DLT_RETENTION_MS) // 30 days retention for DLT
+                .config("cleanup.policy", DLT_CLEANUP_POLICY)
                 .build();
     }
 
     @Bean
     public NewTopic webhookEventsTopic() {
-        return TopicBuilder.name("webhooks.events.v1")
+        return TopicBuilder.name(WEBHOOK_EVENTS_TOPIC)
                 .partitions(6)
                 .replicas(1)
-                .config("retention.ms", "86400000") // 1 day retention
+                .config("retention.ms", RETENTION_MS_1_DAY) // 1 day retention
+                .config("cleanup.policy", CLEANUP_POLICY_1_DAY)
                 .build();
     }
 }
