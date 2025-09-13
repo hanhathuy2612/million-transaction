@@ -1,5 +1,7 @@
 version: '3.8'
 
+name: kafka-redis
+
 services:
   # Redis Service
   redis:

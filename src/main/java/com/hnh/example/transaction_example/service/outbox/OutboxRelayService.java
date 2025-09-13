@@ -70,10 +70,10 @@ public class OutboxRelayService {
     }
 
     /**
-     * Publish single event to Kafka
+     * Publish a single event to Kafka
      */
     private CompletableFuture<SendResult<String, String>> publishToKafka(OutboxEvent event) {
-        // Use payment ID as partition key for ordering
+        // Use payment ID as a partition key for ordering
         String partitionKey = event.getAggregateId().toString();
 
         return kafkaTemplate.send(TOPIC_NAME, partitionKey, event.getPayload())

@@ -55,7 +55,7 @@ public class PaymentProcessingService {
         // Save payment
         payment = paymentRepository.save(payment);
 
-        // Publish event via outbox pattern
+        // Publish event via an outbox pattern
         outboxService.publishPendingPayment(payment);
 
         log.info("Payment {} created and queued for processing", payment.getId());
@@ -69,7 +69,7 @@ public class PaymentProcessingService {
             Payment payment = paymentRepository.findById(paymentId)
                     .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
 
-            // Call real payment processor for authorization
+            // Call a real payment processor for authorization
             PaymentAuthorizationResult authResult = stripeProcessor.simulatePayment(payment,
                     buildPaymentRequestFromPayment(payment));
 
@@ -85,7 +85,7 @@ public class PaymentProcessingService {
                         payment.getAmount());
                 paymentLedgerRepository.save(ledgerEntry);
 
-                // Publish event via outbox pattern
+                // Publish event via an outbox pattern
                 outboxService.publishPaymentAuthorized(payment);
 
                 log.info("Payment {} authorized successfully with {} (Transaction ID: {})",

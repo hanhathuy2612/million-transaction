@@ -52,10 +52,10 @@ public class IdempotencyService {
      */
     public String generateIdempotencyKey(String merchantId, String operation) {
         return String.format("%s_%s_%d_%s",
-                merchantId,
-                operation,
-                System.currentTimeMillis(),
-                UUID.randomUUID().toString().substring(0, 8));
+            merchantId,
+            operation,
+            System.currentTimeMillis(),
+            UUID.randomUUID().toString().substring(0, 8));
     }
 
     /**
@@ -66,7 +66,7 @@ public class IdempotencyService {
         if (clientKey == null || clientKey.trim().isEmpty()) {
             String generatedKey = generateIdempotencyKey(merchantId, operation);
             log.info("Generated idempotency key: {} for merchant: {} operation: {}", generatedKey, merchantId,
-                    operation);
+                operation);
             return generatedKey;
         }
 
@@ -75,12 +75,12 @@ public class IdempotencyService {
             log.warn("Invalid client key format: {}. Generating new key.", clientKey);
             String generatedKey = generateIdempotencyKey(merchantId, operation);
             log.info("Generated new idempotency key: {} for merchant: {} operation: {}", generatedKey, merchantId,
-                    operation);
+                operation);
             return generatedKey;
         }
 
         log.debug("Using client provided idempotency key: {} for merchant: {} operation: {}", clientKey, merchantId,
-                operation);
+            operation);
         return clientKey;
     }
 
@@ -89,7 +89,7 @@ public class IdempotencyService {
      */
     @Transactional(readOnly = true)
     public Optional<ResponseEntity<Object>> checkIdempotency(String merchantId, String idempotencyKey,
-            Object requestBody) {
+                                                             Object requestBody) {
         if (!isValidIdempotencyRequest(merchantId, idempotencyKey)) {
             return Optional.empty();
         }
@@ -129,7 +129,7 @@ public class IdempotencyService {
             cacheInRedis(redisKey, requestHash, response, ttl);
 
             log.debug("Idempotency hit in database for key: {} (request count: {})", idempotencyKey,
-                    key.getRequestCount());
+                key.getRequestCount());
             return Optional.of(response);
         }
 
@@ -141,7 +141,7 @@ public class IdempotencyService {
      */
     @Transactional
     public <T> void storeIdempotentResponse(String merchantId, String idempotencyKey, Object requestBody,
-            ResponseEntity<T> response) {
+                                            ResponseEntity<T> response) {
         if (!isValidIdempotencyRequest(merchantId, idempotencyKey)) {
             return;
         }
@@ -151,15 +151,15 @@ public class IdempotencyService {
         Duration ttl = calculateTTL(requestBody);
         String operationType = extractOperationType(idempotencyKey);
 
-        // Store in database
+        // Store in a database
         IdempotencyKey key = IdempotencyKey.create(
-                merchantId,
-                idempotencyKey,
-                requestHash,
-                response.getStatusCode().value(),
-                responseBodyString,
-                ttl,
-                operationType);
+            merchantId,
+            idempotencyKey,
+            requestHash,
+            response.getStatusCode().value(),
+            responseBodyString,
+            ttl,
+            operationType);
         idempotencyKeyRepository.save(key);
 
         // Cache in Redis
@@ -167,7 +167,7 @@ public class IdempotencyService {
         cacheInRedis(redisKey, requestHash, response, ttl);
 
         log.debug("Stored idempotent response for key: {} with TTL: {} operation: {}",
-                idempotencyKey, ttl, operationType);
+            idempotencyKey, ttl, operationType);
     }
 
     /**
@@ -185,7 +185,7 @@ public class IdempotencyService {
     }
 
     /**
-     * Get current count of active keys for monitoring
+     * Get the current count of active keys for monitoring
      */
     public Long getActiveKeyCount(String merchantId) {
         return idempotencyKeyRepository.countActiveKeysByMerchant(merchantId, LocalDateTime.now());
@@ -199,17 +199,17 @@ public class IdempotencyService {
         Long totalCount = idempotencyKeyRepository.countByMerchantId(merchantId);
 
         return IdempotencyStats.builder()
-                .merchantId(merchantId)
-                .activeKeys(activeCount)
-                .totalKeys(totalCount)
-                .build();
+            .merchantId(merchantId)
+            .activeKeys(activeCount)
+            .totalKeys(totalCount)
+            .build();
     }
 
     // Private methods
 
     private boolean isValidIdempotencyRequest(String merchantId, String idempotencyKey) {
         return merchantId != null && !merchantId.trim().isEmpty() &&
-                idempotencyKey != null && !idempotencyKey.trim().isEmpty();
+            idempotencyKey != null && !idempotencyKey.trim().isEmpty();
     }
 
     private boolean isValidKeyFormat(String key) {
@@ -241,10 +241,10 @@ public class IdempotencyService {
         try {
             String headers = serializeHeaders(response.getHeaders());
             IdempotencyCacheDto cacheDto = new IdempotencyCacheDto(
-                    requestHash,
-                    response.getStatusCode().value(),
-                    serializeResponse(response.getBody()),
-                    headers);
+                requestHash,
+                response.getStatusCode().value(),
+                serializeResponse(response.getBody()),
+                headers);
 
             long ttlSeconds = Math.min(ttl.toSeconds(), DEFAULT_REDIS_TTL.toSeconds());
             redisTemplate.opsForValue().set(redisKey, cacheDto, ttlSeconds, TimeUnit.SECONDS);
@@ -290,22 +290,19 @@ public class IdempotencyService {
      * Extract only critical business data for hashing
      */
     private String extractCriticalData(Object requestBody) {
-        if (requestBody instanceof PaymentRequest) {
-            PaymentRequest request = (PaymentRequest) requestBody;
+        if (requestBody instanceof PaymentRequest request) {
             return String.format("%s_%s_%s_%s_%s",
-                    request.getMerchantId(),
-                    request.getAmount().toString(),
-                    request.getCurrency(),
-                    request.getPaymentMethodId(),
-                    request.getDescription() != null ? request.getDescription() : "");
-        } else if (requestBody instanceof CaptureRequest) {
-            CaptureRequest request = (CaptureRequest) requestBody;
+                request.getMerchantId(),
+                request.getAmount().toString(),
+                request.getCurrency(),
+                request.getPaymentMethodId(),
+                request.getDescription() != null ? request.getDescription() : "");
+        } else if (requestBody instanceof CaptureRequest request) {
             return String.format("CAPTURE_%s", request.getAmount().toString());
-        } else if (requestBody instanceof RefundRequest) {
-            RefundRequest request = (RefundRequest) requestBody;
+        } else if (requestBody instanceof RefundRequest request) {
             return String.format("REFUND_%s_%s",
-                    request.getAmount().toString(),
-                    request.getReason() != null ? request.getReason() : "");
+                request.getAmount().toString(),
+                request.getReason() != null ? request.getReason() : "");
         }
 
         // Fallback to full JSON hash for unknown types
@@ -316,8 +313,7 @@ public class IdempotencyService {
      * Calculate TTL based on request type and business logic
      */
     private Duration calculateTTL(Object requestBody) {
-        if (requestBody instanceof PaymentRequest) {
-            PaymentRequest request = (PaymentRequest) requestBody;
+        if (requestBody instanceof PaymentRequest request) {
             // High-value payments get longer TTL
             if (request.getAmount().compareTo(java.math.BigDecimal.valueOf(1000)) > 0) {
                 return Duration.ofDays(30);
@@ -333,7 +329,7 @@ public class IdempotencyService {
     }
 
     /**
-     * Extract operation type from idempotency key
+     * Extract operation type from the idempotency key
      */
     private String extractOperationType(String idempotencyKey) {
         if (idempotencyKey == null || idempotencyKey.isEmpty()) {
