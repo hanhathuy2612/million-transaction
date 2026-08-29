@@ -60,7 +60,7 @@ class IdempotencyServiceTest {
     void testCheckIdempotency_WithValidRedisCache() {
         // Given
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        String actualHash = idempotencyService.generateRequestHash(REQUEST_BODY);
+        String actualHash = idempotencyService.generateIdempotencyKey(MERCHANT_ID, IDEMPOTENCY_KEY);
         IdempotencyCacheDto cacheDto = new IdempotencyCacheDto(
                 actualHash, 200, "{\"status\":\"success\"}", "{}");
         when(valueOperations.get(anyString())).thenReturn(cacheDto);
@@ -72,7 +72,7 @@ class IdempotencyServiceTest {
         // Then
         assertTrue(result.isPresent());
         assertEquals(200, result.get().getStatusCode().value());
-        verify(valueOperations).get(contains("idempotency:merchant123:key123"));
+        verify(valueOperations).get(contains(actualHash));
     }
 
     @Test
@@ -83,7 +83,7 @@ class IdempotencyServiceTest {
         when(valueOperations.get(anyString())).thenReturn(null);
 
         // Generate the actual hash that will be used
-        String actualHash = idempotencyService.generateRequestHash(REQUEST_BODY);
+        String actualHash = idempotencyService.generateIdempotencyKey(MERCHANT_ID, IDEMPOTENCY_KEY);
 
         IdempotencyKey dbKey = IdempotencyKey.create(
                 MERCHANT_ID, IDEMPOTENCY_KEY, actualHash, 200, "{\"status\":\"success\"}");
@@ -144,7 +144,7 @@ class IdempotencyServiceTest {
         when(valueOperations.get(anyString())).thenReturn(null);
 
         // Generate the actual hash that will be used
-        String actualHash = idempotencyService.generateRequestHash(REQUEST_BODY);
+        String actualHash = idempotencyService.generateIdempotencyKey(MERCHANT_ID, IDEMPOTENCY_KEY);
 
         IdempotencyKey expiredKey = IdempotencyKey.create(
                 MERCHANT_ID, IDEMPOTENCY_KEY, actualHash, 200, "{\"status\":\"success\"}");

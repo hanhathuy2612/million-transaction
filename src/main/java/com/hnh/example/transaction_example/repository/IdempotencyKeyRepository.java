@@ -16,24 +16,8 @@ public interface IdempotencyKeyRepository extends JpaRepository<IdempotencyKey, 
     // Find by merchant and key for idempotency check
     Optional<IdempotencyKey> findByMerchantIdAndKey(String merchantId, String key);
 
-    // Check if key exists (lighter query)
-    boolean existsByMerchantIdAndKey(String merchantId, String key);
-
     // Cleanup expired keys (housekeeping job)
     @Modifying
     @Query("DELETE FROM IdempotencyKey i WHERE i.expiresAt < :cutoffDate")
     int deleteExpiredKeys(@Param("cutoffDate") LocalDateTime cutoffDate);
-
-    // Count active keys per merchant (for monitoring/rate limiting)
-    @Query("SELECT COUNT(i) FROM IdempotencyKey i WHERE i.merchantId = :merchantId AND i.expiresAt > :now")
-    Long countActiveKeysByMerchant(@Param("merchantId") String merchantId, @Param("now") LocalDateTime now);
-
-    // Find recent keys for a merchant (debugging)
-    @Query("SELECT i FROM IdempotencyKey i WHERE i.merchantId = :merchantId AND i.createdDate >= :since ORDER BY i.createdDate DESC")
-    java.util.List<IdempotencyKey> findRecentKeysByMerchant(
-            @Param("merchantId") String merchantId, 
-            @Param("since") LocalDateTime since
-    );
-
-    Long countByMerchantId(String merchantId);
 }

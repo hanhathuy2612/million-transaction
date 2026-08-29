@@ -11,19 +11,6 @@ import com.hnh.example.transaction_example.service.outbox.payload.PaymentFailedP
 import com.hnh.example.transaction_example.service.outbox.payload.PaymentRefundedPayload;
 
 public final class OutboxPayloadUtil {
-    public static final String PAYMENT_ID = "paymentId";
-    public static final String MERCHANT_ID = "merchantId";
-    public static final String AMOUNT = "amount";
-    public static final String CURRENCY = "currency";
-    public static final String PAYMENT_METHOD_ID = "paymentMethodId";
-    public static final String DESCRIPTION = "description";
-    public static final String REFERENCE_ID = "referenceId";
-    public static final String EVENT_TYPE = "eventType";
-    public static final String TIMESTAMP = "timestamp";
-    public static final String FAILURE_REASON = "failureReason";
-    public static final String REFUNDED_AMOUNT = "refundedAmount";
-    public static final String TOTAL_REFUNDED_AMOUNT = "totalRefundedAmount";
-    public static final String CAPTURED_AMOUNT = "capturedAmount";
 
     public static PaymentEventPayload createPaymentEventPayload(Payment payment, OutboxEvent.EventType eventType) {
         return PaymentEventPayload.builder()

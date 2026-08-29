@@ -1,5 +1,21 @@
 package com.hnh.example.transaction_example.service;
 
+import com.hnh.example.transaction_example.domain.IdempotencyKey;
+import com.hnh.example.transaction_example.dto.CaptureRequest;
+import com.hnh.example.transaction_example.dto.IdempotencyCacheDto;
+import com.hnh.example.transaction_example.dto.PaymentRequest;
+import com.hnh.example.transaction_example.dto.RefundRequest;
+import com.hnh.example.transaction_example.repository.IdempotencyKeyRepository;
+import com.hnh.example.transaction_example.util.JsonUtil;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -9,26 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.hnh.example.transaction_example.domain.IdempotencyKey;
-import com.hnh.example.transaction_example.dto.CaptureRequest;
-import com.hnh.example.transaction_example.dto.IdempotencyCacheDto;
-import com.hnh.example.transaction_example.dto.PaymentRequest;
-import com.hnh.example.transaction_example.dto.RefundRequest;
-import com.hnh.example.transaction_example.repository.IdempotencyKeyRepository;
-import com.hnh.example.transaction_example.util.JsonUtil;
-
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -59,38 +55,12 @@ public class IdempotencyService {
     }
 
     /**
-     * Generate and validate idempotency key
-     */
-    public String generateAndValidateIdempotencyKey(String merchantId, String operation, String clientKey) {
-        // Nếu client không cung cấp key, tự generate
-        if (clientKey == null || clientKey.trim().isEmpty()) {
-            String generatedKey = generateIdempotencyKey(merchantId, operation);
-            log.info("Generated idempotency key: {} for merchant: {} operation: {}", generatedKey, merchantId,
-                operation);
-            return generatedKey;
-        }
-
-        // Validate client key format
-        if (!isValidKeyFormat(clientKey)) {
-            log.warn("Invalid client key format: {}. Generating new key.", clientKey);
-            String generatedKey = generateIdempotencyKey(merchantId, operation);
-            log.info("Generated new idempotency key: {} for merchant: {} operation: {}", generatedKey, merchantId,
-                operation);
-            return generatedKey;
-        }
-
-        log.debug("Using client provided idempotency key: {} for merchant: {} operation: {}", clientKey, merchantId,
-            operation);
-        return clientKey;
-    }
-
-    /**
      * Check if request is idempotent and return cached response if exists
      */
     @Transactional(readOnly = true)
     public Optional<ResponseEntity<Object>> checkIdempotency(String merchantId, String idempotencyKey,
                                                              Object requestBody) {
-        if (!isValidIdempotencyRequest(merchantId, idempotencyKey)) {
+        if (isValidIdempotencyRequest(merchantId, idempotencyKey)) {
             return Optional.empty();
         }
 
@@ -142,7 +112,7 @@ public class IdempotencyService {
     @Transactional
     public <T> void storeIdempotentResponse(String merchantId, String idempotencyKey, Object requestBody,
                                             ResponseEntity<T> response) {
-        if (!isValidIdempotencyRequest(merchantId, idempotencyKey)) {
+        if (isValidIdempotencyRequest(merchantId, idempotencyKey)) {
             return;
         }
 
@@ -184,38 +154,10 @@ public class IdempotencyService {
         }
     }
 
-    /**
-     * Get the current count of active keys for monitoring
-     */
-    public Long getActiveKeyCount(String merchantId) {
-        return idempotencyKeyRepository.countActiveKeysByMerchant(merchantId, LocalDateTime.now());
-    }
-
-    /**
-     * Get idempotency key statistics for monitoring
-     */
-    public IdempotencyStats getStats(String merchantId) {
-        Long activeCount = getActiveKeyCount(merchantId);
-        Long totalCount = idempotencyKeyRepository.countByMerchantId(merchantId);
-
-        return IdempotencyStats.builder()
-            .merchantId(merchantId)
-            .activeKeys(activeCount)
-            .totalKeys(totalCount)
-            .build();
-    }
-
     // Private methods
-
     private boolean isValidIdempotencyRequest(String merchantId, String idempotencyKey) {
-        return merchantId != null && !merchantId.trim().isEmpty() &&
-            idempotencyKey != null && !idempotencyKey.trim().isEmpty();
-    }
-
-    private boolean isValidKeyFormat(String key) {
-        // Format: {merchant_id}_{operation}_{timestamp}_{random}
-        String pattern = "^[a-zA-Z0-9]+_[a-zA-Z_]+_\\d+_[a-f0-9]{8}$";
-        return key.matches(pattern);
+        return merchantId == null || merchantId.trim().isEmpty() ||
+            idempotencyKey == null || idempotencyKey.trim().isEmpty();
     }
 
     private Optional<ResponseEntity<Object>> checkRedisCache(String redisKey, String requestHash) {
@@ -404,14 +346,5 @@ public class IdempotencyService {
             log.warn("Error parsing headers from JSON", e);
             return new HttpHeaders();
         }
-    }
-
-    // Inner class for statistics
-    @Data
-    @Builder
-    public static class IdempotencyStats {
-        private String merchantId;
-        private Long activeKeys;
-        private Long totalKeys;
     }
 }
