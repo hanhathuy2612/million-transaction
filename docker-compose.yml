@@ -1,0 +1,8 @@
+# Chạy từ thư mục gốc project:
+#   docker compose up -d
+#
+# MySQL replication tự cấu hình khi slave container start.
+# Reset MySQL data: bash docker/mysql/start.sh --fresh
+
+include:
+  - docker/docker-compose.yml

@@ -1,0 +1,12 @@
+FROM mysql:8.0
+
+ARG MYSQL_CNF=mysql-slave.cnf
+COPY ${MYSQL_CNF} /etc/mysql/conf.d/mysql.cnf
+COPY slave-bootstrap.sh /usr/local/bin/slave-bootstrap.sh
+COPY docker-entrypoint-slave.sh /usr/local/bin/docker-entrypoint-slave.sh
+RUN chmod 644 /etc/mysql/conf.d/mysql.cnf \
+  && sed -i 's/\r$//' /usr/local/bin/slave-bootstrap.sh /usr/local/bin/docker-entrypoint-slave.sh \
+  && chmod +x /usr/local/bin/slave-bootstrap.sh /usr/local/bin/docker-entrypoint-slave.sh
+
+ENTRYPOINT ["docker-entrypoint-slave.sh"]
+CMD ["mysqld"]

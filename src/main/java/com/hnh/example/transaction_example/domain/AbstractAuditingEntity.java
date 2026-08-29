@@ -1,5 +1,6 @@
 package com.hnh.example.transaction_example.domain;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -26,6 +27,7 @@ import lombok.experimental.SuperBuilder;
 @EntityListeners(AuditingEntityListener.class)
 @SuperBuilder(toBuilder = true)
 public abstract class AbstractAuditingEntity implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @CreatedBy

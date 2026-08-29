@@ -45,9 +45,9 @@
             INSERT INTO authority (name)
             VALUES ('ROLE_ANONYMOUS');
 
-            -- Insert default user
+            -- Insert default admin (password: admin, BCrypt strength 10)
             INSERT INTO app_user (email, password_hash, first_name, last_name, phone_number)
-            VALUES ('admin@example.com', '$2a$10$eW91cl9zZWN1cmVfYmFzZTY0X2tleV9oZXJl', 'Admin', 'Admin', '1234567890');
+            VALUES ('admin@example.com', '$2b$10$sLj6uGrsue56DSV9t2U8iu76cmyEOWAE5/.EP/asJA6zHe0BaiUza', 'Admin', 'Admin', '1234567890');
             INSERT INTO user_authority (user_id, authority_name)
             VALUES (1, 'ROLE_ADMIN');
         </sql>

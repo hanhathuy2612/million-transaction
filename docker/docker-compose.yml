@@ -1,0 +1,10 @@
+name: million-transaction
+
+include:
+  - mysql/docker-compose.yml
+  - kafka/docker-compose.yml
+  - redis/docker-compose.yml
+
+networks:
+  app-network:
+    driver: bridge
