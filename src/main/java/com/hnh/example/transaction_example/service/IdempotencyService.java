@@ -47,11 +47,8 @@ public class IdempotencyService {
      * Generate a standardized idempotency key
      */
     public String generateIdempotencyKey(String merchantId, String operation) {
-        return String.format("%s_%s_%d_%s",
-            merchantId,
-            operation,
-            System.currentTimeMillis(),
-            UUID.randomUUID().toString().substring(0, 8));
+        return String.format("%s_%s_%d_%s", merchantId, operation, System.currentTimeMillis(),
+                UUID.randomUUID().toString().substring(0, 8));
     }
 
     /**
@@ -59,7 +56,7 @@ public class IdempotencyService {
      */
     @Transactional(readOnly = true)
     public Optional<ResponseEntity<Object>> checkIdempotency(String merchantId, String idempotencyKey,
-                                                             Object requestBody) {
+            Object requestBody) {
         if (isValidIdempotencyRequest(merchantId, idempotencyKey)) {
             return Optional.empty();
         }
@@ -99,7 +96,7 @@ public class IdempotencyService {
             cacheInRedis(redisKey, requestHash, response, ttl);
 
             log.debug("Idempotency hit in database for key: {} (request count: {})", idempotencyKey,
-                key.getRequestCount());
+                    key.getRequestCount());
             return Optional.of(response);
         }
 
@@ -111,7 +108,7 @@ public class IdempotencyService {
      */
     @Transactional
     public <T> void storeIdempotentResponse(String merchantId, String idempotencyKey, Object requestBody,
-                                            ResponseEntity<T> response) {
+            ResponseEntity<T> response) {
         if (isValidIdempotencyRequest(merchantId, idempotencyKey)) {
             return;
         }
@@ -122,22 +119,16 @@ public class IdempotencyService {
         String operationType = extractOperationType(idempotencyKey);
 
         // Store in a database
-        IdempotencyKey key = IdempotencyKey.create(
-            merchantId,
-            idempotencyKey,
-            requestHash,
-            response.getStatusCode().value(),
-            responseBodyString,
-            ttl,
-            operationType);
+        IdempotencyKey key = IdempotencyKey.create(merchantId, idempotencyKey, requestHash,
+                response.getStatusCode().value(), responseBodyString, ttl, operationType);
         idempotencyKeyRepository.save(key);
 
         // Cache in Redis
         String redisKey = buildRedisKey(merchantId, idempotencyKey);
         cacheInRedis(redisKey, requestHash, response, ttl);
 
-        log.debug("Stored idempotent response for key: {} with TTL: {} operation: {}",
-            idempotencyKey, ttl, operationType);
+        log.debug("Stored idempotent response for key: {} with TTL: {} operation: {}", idempotencyKey, ttl,
+                operationType);
     }
 
     /**
@@ -156,8 +147,8 @@ public class IdempotencyService {
 
     // Private methods
     private boolean isValidIdempotencyRequest(String merchantId, String idempotencyKey) {
-        return merchantId == null || merchantId.trim().isEmpty() ||
-            idempotencyKey == null || idempotencyKey.trim().isEmpty();
+        return merchantId == null || merchantId.trim().isEmpty() || idempotencyKey == null
+                || idempotencyKey.trim().isEmpty();
     }
 
     private Optional<ResponseEntity<Object>> checkRedisCache(String redisKey, String requestHash) {
@@ -182,11 +173,8 @@ public class IdempotencyService {
     private <T> void cacheInRedis(String redisKey, String requestHash, ResponseEntity<T> response, Duration ttl) {
         try {
             String headers = serializeHeaders(response.getHeaders());
-            IdempotencyCacheDto cacheDto = new IdempotencyCacheDto(
-                requestHash,
-                response.getStatusCode().value(),
-                serializeResponse(response.getBody()),
-                headers);
+            IdempotencyCacheDto cacheDto = new IdempotencyCacheDto(requestHash, response.getStatusCode().value(),
+                    serializeResponse(response.getBody()), headers);
 
             long ttlSeconds = Math.min(ttl.toSeconds(), DEFAULT_REDIS_TTL.toSeconds());
             redisTemplate.opsForValue().set(redisKey, cacheDto, ttlSeconds, TimeUnit.SECONDS);
@@ -214,8 +202,8 @@ public class IdempotencyService {
     }
 
     /**
-     * Generate smart request hash based on request type
-     * Only hash critical business fields, ignore timestamps and IDs
+     * Generate smart request hash based on request type Only hash critical business
+     * fields, ignore timestamps and IDs
      */
     private String generateSmartRequestHash(Object requestBody) {
         try {
@@ -233,18 +221,14 @@ public class IdempotencyService {
      */
     private String extractCriticalData(Object requestBody) {
         if (requestBody instanceof PaymentRequest request) {
-            return String.format("%s_%s_%s_%s_%s",
-                request.getMerchantId(),
-                request.getAmount().toString(),
-                request.getCurrency(),
-                request.getPaymentMethodId(),
-                request.getDescription() != null ? request.getDescription() : "");
+            return String.format("%s_%s_%s_%s_%s", request.getMerchantId(), request.getAmount().toString(),
+                    request.getCurrency(), request.getPaymentMethodId(),
+                    request.getDescription() != null ? request.getDescription() : "");
         } else if (requestBody instanceof CaptureRequest request) {
             return String.format("CAPTURE_%s", request.getAmount().toString());
         } else if (requestBody instanceof RefundRequest request) {
-            return String.format("REFUND_%s_%s",
-                request.getAmount().toString(),
-                request.getReason() != null ? request.getReason() : "");
+            return String.format("REFUND_%s_%s", request.getAmount().toString(),
+                    request.getReason() != null ? request.getReason() : "");
         }
 
         // Fallback to full JSON hash for unknown types

@@ -11,11 +11,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import lombok.Builder;
 
 @Entity
 @Table(name = "idempotency_keys", uniqueConstraints = @UniqueConstraint(columnNames = { "merchant_id",
@@ -57,44 +57,29 @@ public class IdempotencyKey extends AbstractAuditingEntity {
     private Integer requestCount = 1;
 
     // Default constructor for creating new idempotency keys
-    public static IdempotencyKey create(String merchantId, String key, String requestHash,
-            Integer responseCode, String responseBody) {
+    public static IdempotencyKey create(String merchantId, String key, String requestHash, Integer responseCode,
+            String responseBody) {
         return create(merchantId, key, requestHash, responseCode, responseBody, Duration.ofHours(24));
     }
 
     // Constructor with custom TTL
-    public static IdempotencyKey create(String merchantId, String key, String requestHash,
-            Integer responseCode, String responseBody, Duration ttl) {
-        return IdempotencyKey.builder()
-                .merchantId(merchantId)
-                .key(key)
-                .requestHash(requestHash)
-                .responseCode(responseCode)
-                .responseBody(responseBody)
-                .expiresAt(LocalDateTime.now().plus(ttl))
-                .operationType(extractOperationType(key))
-                .requestCount(1)
-                .build();
+    public static IdempotencyKey create(String merchantId, String key, String requestHash, Integer responseCode,
+            String responseBody, Duration ttl) {
+        return IdempotencyKey.builder().merchantId(merchantId).key(key).requestHash(requestHash)
+                .responseCode(responseCode).responseBody(responseBody).expiresAt(LocalDateTime.now().plus(ttl))
+                .operationType(extractOperationType(key)).requestCount(1).build();
     }
 
     // Constructor with operation type
-    public static IdempotencyKey create(String merchantId, String key, String requestHash,
-            Integer responseCode, String responseBody, Duration ttl, String operationType) {
-        return IdempotencyKey.builder()
-                .merchantId(merchantId)
-                .key(key)
-                .requestHash(requestHash)
-                .responseCode(responseCode)
-                .responseBody(responseBody)
-                .expiresAt(LocalDateTime.now().plus(ttl))
-                .operationType(operationType)
-                .requestCount(1)
-                .build();
+    public static IdempotencyKey create(String merchantId, String key, String requestHash, Integer responseCode,
+            String responseBody, Duration ttl, String operationType) {
+        return IdempotencyKey.builder().merchantId(merchantId).key(key).requestHash(requestHash)
+                .responseCode(responseCode).responseBody(responseBody).expiresAt(LocalDateTime.now().plus(ttl))
+                .operationType(operationType).requestCount(1).build();
     }
 
     /**
-     * Extract operation type from idempotency key
-     * Format: {merchant_id}_{operation}_{timestamp}_{random}
+     * Extract operation type from idempotency key Format: {merchant_id}_{operation}_{timestamp}_{random}
      */
     private static String extractOperationType(String key) {
         if (key == null || key.isEmpty()) {
@@ -161,7 +146,8 @@ public class IdempotencyKey extends AbstractAuditingEntity {
 
         if (hours > 0) {
             return String.format("%dh %dm", hours, minutes);
-        } else {
+        }
+        else {
             return String.format("%dm", minutes);
         }
     }
@@ -170,8 +156,7 @@ public class IdempotencyKey extends AbstractAuditingEntity {
      * Check if this is a high-value operation based on operation type
      */
     public boolean isHighValueOperation() {
-        return "CREATE_PAYMENT".equals(operationType) ||
-                "CAPTURE_PAYMENT".equals(operationType);
+        return "CREATE_PAYMENT".equals(operationType) || "CAPTURE_PAYMENT".equals(operationType);
     }
 
     /**
@@ -183,11 +168,11 @@ public class IdempotencyKey extends AbstractAuditingEntity {
         }
 
         return switch (operationType.toUpperCase()) {
-            case "CREATE_PAYMENT" -> Duration.ofDays(7);
-            case "CAPTURE_PAYMENT" -> Duration.ofDays(3);
-            case "REFUND_PAYMENT" -> Duration.ofDays(30);
-            case "VOID_PAYMENT" -> Duration.ofDays(1);
-            default -> Duration.ofHours(24);
+        case "CREATE_PAYMENT" -> Duration.ofDays(7);
+        case "CAPTURE_PAYMENT" -> Duration.ofDays(3);
+        case "REFUND_PAYMENT" -> Duration.ofDays(30);
+        case "VOID_PAYMENT" -> Duration.ofDays(1);
+        default -> Duration.ofHours(24);
         };
     }
 }

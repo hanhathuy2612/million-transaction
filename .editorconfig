@@ -1,3 +1,6 @@
+# EditorConfig: https://editorconfig.org
+# Shared formatting baseline for VS Code, IntelliJ IDEA, Eclipse, and other IDEs.
+
 root = true
 
 [*]
@@ -10,15 +13,24 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
 max_line_length = 120
+continuation_indent_size = 4
 
-[*.xml]
+[*.{xml,yml,yaml,json}]
 indent_style = space
 indent_size = 2
 
-[*.yml]
-[*.yaml]
+[*.gradle]
+indent_style = tab
+
+[*.{properties,sql,sh}]
 indent_style = space
 indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
+
+[*.{bat,cmd,ps1}]
+end_of_line = crlf

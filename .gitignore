@@ -19,6 +19,8 @@ bin/
 
 ### IntelliJ IDEA ###
 .idea
+!.idea/codeStyles
+!.idea/codeStyles/**
 *.iws
 *.iml
 *.ipr
@@ -34,3 +36,6 @@ out/
 /.nb-gradle/
 
 ### VS Code ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json

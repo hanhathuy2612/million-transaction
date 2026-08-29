@@ -29,8 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public class WebhookController {
 
     @Operation(summary = "Configure webhook endpoint", description = "Configure a webhook endpoint to receive payment notifications. "
-            +
-            "The webhook will be called for payment events like authorization, capture, refund, and failure.")
+            + "The webhook will be called for payment events like authorization, capture, refund, and failure.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Webhook configured successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = WebhookConfigResponse.class), examples = @ExampleObject(name = "Webhook Configuration", value = """
                     {
@@ -49,8 +48,7 @@ public class WebhookController {
                       "message": "Invalid webhook URL format",
                       "path": "/api/v1/webhooks"
                     }
-                    """)))
-    })
+                    """))) })
     @PostMapping
     public ResponseEntity<WebhookConfigResponse> configureWebhook(
             @Parameter(description = "Merchant identifier", required = true) @RequestHeader("X-Merchant-ID") String merchantId,
@@ -72,8 +70,7 @@ public class WebhookController {
 
     @Operation(summary = "List webhook configurations", description = "Retrieve all webhook configurations for a merchant.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Webhook configurations retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = WebhookListResponse.class)))
-    })
+            @ApiResponse(responseCode = "200", description = "Webhook configurations retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = WebhookListResponse.class))) })
     @GetMapping
     public ResponseEntity<WebhookListResponse> listWebhooks(
             @Parameter(description = "Merchant identifier", required = true) @RequestHeader("X-Merchant-ID") String merchantId) {
@@ -92,10 +89,8 @@ public class WebhookController {
     }
 
     @Operation(summary = "Delete webhook configuration", description = "Delete a webhook configuration by its ID.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Webhook deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Webhook not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
-    })
+    @ApiResponses(value = { @ApiResponse(responseCode = "204", description = "Webhook deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Webhook not found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))) })
     @DeleteMapping("/{webhookId}")
     public ResponseEntity<Void> deleteWebhook(
             @Parameter(description = "Merchant identifier", required = true) @RequestHeader("X-Merchant-ID") String merchantId,
@@ -110,8 +105,7 @@ public class WebhookController {
 
     @Operation(summary = "Test webhook endpoint", description = "Send a test webhook to verify the endpoint is working correctly.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Test webhook sent successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TestWebhookResponse.class)))
-    })
+            @ApiResponse(responseCode = "200", description = "Test webhook sent successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = TestWebhookResponse.class))) })
     @PostMapping("/{webhookId}/test")
     public ResponseEntity<TestWebhookResponse> testWebhook(
             @Parameter(description = "Merchant identifier", required = true) @RequestHeader("X-Merchant-ID") String merchantId,

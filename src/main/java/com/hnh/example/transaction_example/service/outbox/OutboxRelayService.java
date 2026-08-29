@@ -1,19 +1,17 @@
 package com.hnh.example.transaction_example.service.outbox;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-
+import com.hnh.example.transaction_example.domain.OutboxEvent;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.hnh.example.transaction_example.domain.OutboxEvent;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,18 +42,18 @@ public class OutboxRelayService {
 
             // Publish events to Kafka
             List<CompletableFuture<SendResult<String, String>>> futures = events.stream()
-                    .map(this::publishToKafka)
-                    .toList();
+                .map(this::publishToKafka)
+                .toList();
 
             // Wait for all publishes to complete
             CompletableFuture<Void> allOf = CompletableFuture.allOf(
-                    futures.toArray(new CompletableFuture[0]));
+                futures.toArray(new CompletableFuture[0]));
 
             allOf.thenRun(() -> {
                 // Mark events as published only after successful Kafka publish
                 List<Long> eventIds = events.stream()
-                        .map(OutboxEvent::getId)
-                        .collect(Collectors.toList());
+                    .map(OutboxEvent::getId)
+                    .collect(Collectors.toList());
 
                 outboxService.markEventsAsPublished(eventIds);
                 log.info("Successfully relayed {} events to Kafka", events.size());
@@ -77,15 +75,15 @@ public class OutboxRelayService {
         String partitionKey = event.getAggregateId().toString();
 
         return kafkaTemplate.send(TOPIC_NAME, partitionKey, event.getPayload())
-                .thenApply(result -> {
-                    log.debug("Published event {} to Kafka partition {}",
-                            event.getId(), result.getRecordMetadata().partition());
-                    return result;
-                })
-                .exceptionally(throwable -> {
-                    log.error("Failed to publish event {} to Kafka", event.getId(), throwable);
-                    throw new RuntimeException("Kafka publish failed", throwable);
-                });
+            .thenApply(result -> {
+                log.debug("Published event {} to Kafka partition {}",
+                    event.getId(), result.getRecordMetadata().partition());
+                return result;
+            })
+            .exceptionally(throwable -> {
+                log.error("Failed to publish event {} to Kafka", event.getId(), throwable);
+                throw new RuntimeException("Kafka publish failed", throwable);
+            });
     }
 
     /**
