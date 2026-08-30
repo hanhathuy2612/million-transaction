@@ -21,10 +21,8 @@
     "[java]": {
         "editor.defaultFormatter": "redhat.java",
         "editor.formatOnSave": true,
-        "editor.tabSize": 4
-    },
-    "editor.codeActionsOnSave": {
-        "[java]": {
+        "editor.tabSize": 4,
+        "editor.codeActionsOnSave": {
             "source.organizeImports": "never"
         }
     },

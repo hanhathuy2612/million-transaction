@@ -45,12 +45,11 @@ public class PaymentResponse {
     }
 
     public boolean isRefundable() {
-        return getRefundableAmount().compareTo(BigDecimal.ZERO) > 0 &&
-                (status == PaymentStatus.CAPTURED || status == PaymentStatus.PARTIALLY_REFUNDED);
+        return getRefundableAmount().compareTo(BigDecimal.ZERO) > 0
+                && (status == PaymentStatus.CAPTURED || status == PaymentStatus.PARTIALLY_REFUNDED);
     }
 
     public boolean isCapturable() {
-        return status == PaymentStatus.AUTHORIZED &&
-                (capturedAmount == null || capturedAmount.compareTo(amount) < 0);
+        return status == PaymentStatus.AUTHORIZED && (capturedAmount == null || capturedAmount.compareTo(amount) < 0);
     }
 }
